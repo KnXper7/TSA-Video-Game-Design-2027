@@ -10,8 +10,19 @@ namespace TSAGame
         public const string MissionControl = "01_MissionControl";
         public const string Cockpit = "02_Cockpit";
         public const string LandingSite = "03_LandingSite";
+        public const string FuelMoon = "04_FuelMoon";
+        public const string GateWorld = "05_GateWorld";
+        public const string Harvester = "06_Harvester";
+        public const string Control = "07_Control";
+
+        /// <summary>Every scene in play order.</summary>
+        public static readonly string[] All = { MissionControl, Cockpit, LandingSite, FuelMoon, GateWorld, Harvester, Control };
 
         static bool loading;
+
+        // Statics survive between Play sessions when domain reload is off, so reset them on every start.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => loading = false;
 
         /// <summary>Fades to black (or the given colour), then loads the scene. The next scene fades itself in.</summary>
         public static void Load(string sceneName, float fadeDuration = 1f, Color? fadeColor = null)

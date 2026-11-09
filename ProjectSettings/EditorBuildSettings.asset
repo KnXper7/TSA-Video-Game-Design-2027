@@ -15,6 +15,18 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/03_LandingSite.unity
     guid: e48453bc689f2405c82798d74e9e51b7
   - enabled: 1
+    path: Assets/_Project/Scenes/04_FuelMoon.unity
+    guid: b977b61a9c4dc4285b9e39d33c95c720
+  - enabled: 1
+    path: Assets/_Project/Scenes/05_GateWorld.unity
+    guid: 27d2dd19b9ed94097b806c440330300d
+  - enabled: 1
+    path: Assets/_Project/Scenes/06_Harvester.unity
+    guid: a96f324bb0a59456d847274ee0756167
+  - enabled: 1
+    path: Assets/_Project/Scenes/07_Control.unity
+    guid: 6456cfab1b2fa401b973f900c859e555
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:

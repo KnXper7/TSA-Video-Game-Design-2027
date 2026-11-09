@@ -19,6 +19,7 @@ namespace TSAGame
             new PowerSystem { name = SystemEngines, required = 2 },
             new PowerSystem { name = SystemComms, required = 1 },
         };
+        [SerializeField] string panelTitle = "POWER DISTRIBUTION";
         [SerializeField] int baseCapacity = 4;
         [SerializeField] int engineeringBonusThreshold = 3;
         [SerializeField] int engineeringBonusCells = 1;
@@ -130,7 +131,7 @@ namespace TSAGame
             UIFactory.Place(panel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1000, 640), Vector2.zero);
             var ink = new Color(0.85f, 0.95f, 1f);
 
-            var title = UIFactory.CreateText("Title", panel.transform, "POWER DISTRIBUTION", 40, TextAnchor.UpperLeft, ink);
+            var title = UIFactory.CreateText("Title", panel.transform, panelTitle, 40, TextAnchor.UpperLeft, ink);
             title.fontStyle = FontStyle.Bold;
             UIFactory.Place(title.rectTransform, new Vector2(0, 1), new Vector2(900, 60), new Vector2(40, -30));
 

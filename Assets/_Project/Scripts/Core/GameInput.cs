@@ -17,6 +17,8 @@ namespace TSAGame
         public static readonly InputAction Choice1;
         public static readonly InputAction Choice2;
         public static readonly InputAction Choice3;
+        public static readonly InputAction Choice4;
+        public static readonly InputAction Stats;
 
         static GameInput()
         {
@@ -46,8 +48,12 @@ namespace TSAGame
             Choice1 = new InputAction("Choice1", InputActionType.Button, "<Keyboard>/1");
             Choice2 = new InputAction("Choice2", InputActionType.Button, "<Keyboard>/2");
             Choice3 = new InputAction("Choice3", InputActionType.Button, "<Keyboard>/3");
+            Choice4 = new InputAction("Choice4", InputActionType.Button, "<Keyboard>/4");
 
-            foreach (var action in new[] { Move, LookMouse, LookStick, Interact, Jump, Sprint, Skip, Choice1, Choice2, Choice3 })
+            Stats = new InputAction("Stats", InputActionType.Button, "<Keyboard>/tab");
+            Stats.AddBinding("<Gamepad>/select");
+
+            foreach (var action in new[] { Move, LookMouse, LookStick, Interact, Jump, Sprint, Skip, Choice1, Choice2, Choice3, Choice4, Stats })
                 action.Enable();
         }
     }

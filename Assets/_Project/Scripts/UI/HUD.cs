@@ -31,6 +31,7 @@ namespace TSAGame
         [SerializeField] Image oxygenFill;
         [SerializeField] Text skipHint;
         [SerializeField] RectTransform choiceRoot;
+        [SerializeField] Text fuelText;
 
         [Tooltip("Scene starts on a black screen. Scripts fade it in when they are ready.")]
         [SerializeField] bool startBlack = true;
@@ -49,6 +50,17 @@ namespace TSAGame
             if (fader == null) BuildDefaultLayout();
             UIFactory.EnsureEventSystem();
 
+            // The title card must draw over the fader, or titles shown on a black screen are hidden.
+            titleGroup.transform.SetAsLastSibling();
+            if (fuelText == null)
+            {
+                fuelText = UIFactory.CreateText("Fuel", fader.transform.parent, "", 24, TextAnchor.LowerLeft, new Color(1f, 0.85f, 0.35f));
+                UIFactory.Place(fuelText.rectTransform, new Vector2(0, 0), new Vector2(400, 40), new Vector2(40, 104));
+                fuelText.transform.SetAsFirstSibling();
+            }
+            if (FindAnyObjectByType<FirstPersonController>() != null && GetComponent<StatsPanel>() == null)
+                gameObject.AddComponent<StatsPanel>();
+
             SetFade(startBlack ? 1f : 0f);
             HideSubtitle();
             SetObjective(null);
@@ -66,6 +78,8 @@ namespace TSAGame
             if (GameState.Instance == null) return;
             GameState.Instance.XpGained += OnXpGained;
             GameState.Instance.LeveledUp += OnLeveledUp;
+            GameState.Instance.FuelChanged += OnFuelChanged;
+            OnFuelChanged(GameState.Instance.Fuel);
         }
 
         void OnDisable()
@@ -73,6 +87,14 @@ namespace TSAGame
             if (GameState.Instance == null) return;
             GameState.Instance.XpGained -= OnXpGained;
             GameState.Instance.LeveledUp -= OnLeveledUp;
+            GameState.Instance.FuelChanged -= OnFuelChanged;
+        }
+
+        void OnFuelChanged(int fuel)
+        {
+            bool show = fuel > 0 || GameState.Instance.HasFlag("moon.refueled");
+            fuelText.text = show ? $"FUEL CELLS  {fuel}" : "";
+            fuelText.color = fuel > 1 ? new Color(1f, 0.85f, 0.35f) : new Color(1f, 0.35f, 0.3f);
         }
 
         void OnDestroy()
@@ -193,7 +215,7 @@ namespace TSAGame
 
         // ---------- Dialogue choices ----------
 
-        /// <summary>Shows up to three options as buttons (also keys 1-3) and reports the chosen index.</summary>
+        /// <summary>Shows up to four options as buttons (also keys 1-4) and reports the chosen index.</summary>
         public IEnumerator Choose(IList<string> options, Action<int> onChosen)
         {
             IsChoosing = true;
@@ -222,6 +244,7 @@ namespace TSAGame
                 if (GameInput.Choice1.WasPressedThisFrame() && options.Count > 0) chosen = 0;
                 else if (GameInput.Choice2.WasPressedThisFrame() && options.Count > 1) chosen = 1;
                 else if (GameInput.Choice3.WasPressedThisFrame() && options.Count > 2) chosen = 2;
+                else if (GameInput.Choice4.WasPressedThisFrame() && options.Count > 3) chosen = 3;
                 yield return null;
             }
 
@@ -295,7 +318,7 @@ namespace TSAGame
 
             // Dialogue choices, centre
             choiceRoot = UIFactory.CreateRect("Choices", root);
-            UIFactory.Place(choiceRoot, new Vector2(0.5f, 0.5f), new Vector2(900, 220), new Vector2(0, 0));
+            UIFactory.Place(choiceRoot, new Vector2(0.5f, 0.5f), new Vector2(1100, 280), new Vector2(0, 0));
             choiceRoot.gameObject.SetActive(false);
 
             // Title card, centre

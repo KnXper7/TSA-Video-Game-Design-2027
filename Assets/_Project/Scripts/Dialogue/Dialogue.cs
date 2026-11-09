@@ -10,6 +10,8 @@ namespace TSAGame
     {
         public const string Commander = "COMMANDER";
         public const string ShipAI = "SHIP AI";
+        public const string Pilot = "COLONY PILOT";
+        public const string Network = "NETWORK";
         public const string FlightDirector = "FLIGHT DIRECTOR";
         public const string Controller = "CONTROLLER";
     }
@@ -44,10 +46,28 @@ namespace TSAGame
 
         public static bool IsPlaying { get; private set; }
 
+        /// <summary>Text speed. 1 is normal; higher is faster (a settings menu or a test run can raise it).</summary>
+        public static float SpeedMultiplier { get; set; } = 1f;
+
+        // Statics survive between Play sessions when domain reload is off, so reset them on every start.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics()
+        {
+            IsPlaying = false;
+            SpeedMultiplier = 1f;
+        }
+
         public static IEnumerator Play(IEnumerable<DialogueLine> lines)
         {
             foreach (var line in lines)
                 yield return Say(line);
+        }
+
+        /// <summary>Short form for scripts: <c>yield return Dialogue.Play((Speakers.ShipAI, "..."), ...);</c></summary>
+        public static IEnumerator Play(params (string speaker, string text)[] lines)
+        {
+            foreach (var (speaker, text) in lines)
+                yield return Say(speaker, text);
         }
 
         public static IEnumerator Say(string speaker, string text, float hold = 0f) => Say(new DialogueLine(speaker, text, hold));
@@ -63,7 +83,7 @@ namespace TSAGame
             float shown = 0f;
             while (shown < line.text.Length)
             {
-                shown += CharsPerSecond * Time.unscaledDeltaTime;
+                shown += CharsPerSecond * SpeedMultiplier * Time.unscaledDeltaTime;
                 hud.ShowSubtitle(line.speaker, line.text.Substring(0, Mathf.Min(line.text.Length, (int)shown)));
                 yield return null;
                 if (GameInput.Interact.WasPressedThisFrame()) break;
@@ -71,7 +91,7 @@ namespace TSAGame
             hud.ShowSubtitle(line.speaker, line.text);
             yield return null; // so the press that finished typing doesn't also skip the hold
 
-            for (float t = 0; t < line.HoldTime; t += Time.unscaledDeltaTime)
+            for (float t = 0; t < line.HoldTime / SpeedMultiplier; t += Time.unscaledDeltaTime)
             {
                 if (GameInput.Interact.WasPressedThisFrame()) break;
                 yield return null;

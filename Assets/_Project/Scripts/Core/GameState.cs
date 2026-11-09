@@ -31,17 +31,22 @@ namespace TSAGame
         [Header("Hidden relationship score with the other pilot (0-100)")]
         [SerializeField, Range(0, 100)] int trust = 30;
 
+        [Header("Ship fuel cells. Each gate jump burns one.")]
+        [SerializeField] int fuel;
+
         readonly HashSet<string> flags = new();
 
         public event Action<int, string> XpGained;   // amount, reason
         public event Action<int> LeveledUp;          // new level
         public event Action<int> TrustChanged;       // new value
+        public event Action<int> FuelChanged;        // new value
 
         public int Level => level;
         public int Xp => xp;
         public int XpToNextLevel => 100 * level;
         public int UnspentPoints => unspentPoints;
         public int Trust => trust;
+        public int Fuel => fuel;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Bootstrap()
@@ -104,8 +109,36 @@ namespace TSAGame
             TrustChanged?.Invoke(trust);
         }
 
+        public void ChangeFuel(int delta)
+        {
+            fuel = Mathf.Max(0, fuel + delta);
+            FuelChanged?.Invoke(fuel);
+        }
+
         public void SetFlag(string flag) => flags.Add(flag);
         public bool HasFlag(string flag) => flags.Contains(flag);
+
+        /// <summary>How many flags start with the prefix (for example "record." for Architect records found).</summary>
+        public int CountFlags(string prefix)
+        {
+            int count = 0;
+            foreach (var flag in flags)
+                if (flag.StartsWith(prefix)) count++;
+            return count;
+        }
+
+        /// <summary>Back to a fresh game (used after an ending).</summary>
+        public void ResetAll()
+        {
+            engineering = navigation = diplomacy = survival = 2;
+            level = 1;
+            xp = 0;
+            unspentPoints = 0;
+            trust = 30;
+            flags.Clear();
+            fuel = 0;
+            FuelChanged?.Invoke(fuel);
+        }
 
         void Set(Stat stat, int value)
         {

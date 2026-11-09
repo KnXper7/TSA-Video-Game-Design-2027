@@ -14,12 +14,13 @@ using UnityEngine.UI;
 namespace TSAGame.EditorTools
 {
     /// <summary>
-    /// Builds the three intro scenes with placeholder geometry: TSA > Build Intro Scenes.
+    /// Builds every story scene with placeholder geometry: TSA > Build Intro Scenes.
+    /// Scenes 01-03 are in this file; 04-07 are in StorySceneBuilder.cs.
     /// Every stand-in object sits under a "MODEL_..." parent. To swap in a real model, drop it under that parent
     /// and delete the child named "Placeholder". Scripts reference the MODEL_ parent, so nothing breaks.
     /// Re-running the builder overwrites these scenes, so make layout changes after you are happy with the structure.
     /// </summary>
-    public static class IntroSceneBuilder
+    public static partial class IntroSceneBuilder
     {
         const string Root = "Assets/_Project";
         const string ScenesDir = Root + "/Scenes";
@@ -36,7 +37,8 @@ namespace TSAGame.EditorTools
         {
             public Material Floor, Wall, Desk, Screen, ScreenBlue, Operator, Director, Suit, Rocket, EngineGlow,
                 GateRing, GateCore, PlanetX, LostSignal, Cockpit, Console, ConsoleScreen, Seat, Shutter,
-                NotEarth, Moon, Grass, Hill, Bark, Leaves, Wreck, Scorch, Sensor, Crate, Beacon, Ruin, Glyph, OldRocket, Stars;
+                NotEarth, Moon, Grass, Hill, Bark, Leaves, Wreck, Scorch, Sensor, Crate, Beacon, Ruin, Glyph, OldRocket, Stars,
+                Pilot, Sand, Seabed, TankBlue, TankWhite, TankRed, Platform;
         }
 
         [MenuItem("TSA/Build Intro Scenes", priority = 0)]
@@ -57,6 +59,10 @@ namespace TSAGame.EditorTools
             BuildMissionControl(mats, post);
             BuildCockpit(mats, post);
             BuildLandingSite(mats, post);
+            BuildFuelMoon(mats, post);
+            BuildGateWorld(mats, post);
+            BuildHarvester(mats, post);
+            BuildControl(mats, post);
             RegisterScenes();
 
             AssetDatabase.SaveAssets();
@@ -179,7 +185,7 @@ namespace TSAGame.EditorTools
             var cam = NewCamera("Cutscene Camera", new Vector3(0, 5.5f, -8.5f), Quaternion.identity, 50f, listener: true, post: true);
             var markers = new GameObject("Shot Markers").transform;
             var cutscene = new GameObject("Cutscene Director").AddComponent<CutsceneDirector>();
-            Set(cutscene, ("cutsceneCamera", cam), ("endTitle", "[GAME TITLE]"), ("endSubtitle", ""), ("nextScene", SceneFlow.Cockpit));
+            Set(cutscene, ("cutsceneCamera", cam), ("endTitle", "THE GATEWAY"), ("endSubtitle", ""), ("nextScene", SceneFlow.Cockpit));
 
             var screenCentre = new Vector3(0, 4f, 8.8f);
             var shots = cutscene.Shots;
@@ -347,6 +353,7 @@ namespace TSAGame.EditorTools
                 var p = new Vector3(((float)random.NextDouble() - 0.5f) * 180f, 0, ((float)random.NextDouble() - 0.5f) * 180f);
                 if (p.magnitude < 18f) continue;                                      // keep the crash site clear
                 if (Vector3.Distance(p, new Vector3(45, 0, 95)) < 14f) continue;      // and the second rocket's clearing
+                if (Vector3.Distance(p, new Vector3(-40, 0, 84)) < 16f) continue;     // and the ancient gate
                 var tree = (GameObject)PrefabUtility.InstantiatePrefab(treePrefab, forest);
                 tree.transform.position = p;
                 tree.transform.rotation = Quaternion.Euler(0, (float)random.NextDouble() * 360f, 0);
@@ -398,6 +405,10 @@ namespace TSAGame.EditorTools
             }
             var ruinsZone = TriggerBox("Ruins Trigger", ruins, ruins.position + new Vector3(0, 4, 3), new Vector3(30, 10, 30));
 
+            // The ancient gate, behind the ruins
+            Ring("AncientGate", null, new Vector3(-40, 0, 92), 10f, m.Ruin, m.Glyph);
+            var gateConsole = Console("GateConsole", null, new Vector3(-40, 0, 78), 0f, m, "Examine the ring", hold: 2f);
+
             // Second rocket and its radio signal
             var oldRocket = Slot("SecondRocket", null, new Vector3(45, 0, 95), Vector3.zero);
             Prim(PrimitiveType.Capsule, "Placeholder", oldRocket, new Vector3(0, 6, 0), new Vector3(2.6f, 6f, 2.6f), m.OldRocket);
@@ -406,6 +417,10 @@ namespace TSAGame.EditorTools
             Prim(PrimitiveType.Cylinder, "Beam", signalMarker, new Vector3(0, 40, 0), new Vector3(0.4f, 40f, 0.4f), m.Beacon, collider: false);
             PointLight("Signal Light", signalMarker, oldRocket.position + new Vector3(0, 13, 0), new Color(0.4f, 0.85f, 1f), 6f, 25f);
             var signalZone = TriggerBox("Signal Trigger", oldRocket, oldRocket.position + new Vector3(0, 4, 0), new Vector3(18, 10, 18));
+            var pilotShip = oldRocket.gameObject.AddComponent<Interactable>();
+            Set(pilotShip, ("prompt", "Board the ship"));
+            var pilot = Slot("ColonyPilot", null, new Vector3(41, 0, 89.5f), new Vector3(0, 200f, 0));
+            Prim(PrimitiveType.Capsule, "Placeholder", pilot, new Vector3(0, 1f, 0), new Vector3(0.7f, 1f, 0.7f), m.Pilot, collider: false);
 
             // Player
             var (player, _) = Player(new Vector3(4.5f, 0, 1.5f), 1.65f, seatedYawLimit: 0f);
@@ -415,7 +430,8 @@ namespace TSAGame.EditorTools
             var sequence = new GameObject("Landing Site Sequence").AddComponent<LandingSiteSequence>();
             Set(sequence, ("player", player.GetComponent<FirstPersonController>()), ("oxygen", oxygen), ("airScanner", sensor),
                 ("salvage", salvage.ToArray()), ("salvageBeacons", beacons.ToArray()), ("ruinsZone", ruinsZone),
-                ("signalZone", signalZone), ("signalMarker", signalMarker.gameObject));
+                ("signalZone", signalZone), ("signalMarker", signalMarker.gameObject),
+                ("gateConsole", gateConsole), ("pilotShip", pilotShip));
 
             AddHud();
             Save(scene, SceneFlow.LandingSite);
@@ -485,7 +501,7 @@ namespace TSAGame.EditorTools
 
         static void RegisterScenes()
         {
-            var ours = new[] { SceneFlow.MissionControl, SceneFlow.Cockpit, SceneFlow.LandingSite }.Select(ScenePath).ToList();
+            var ours = SceneFlow.All.Select(ScenePath).ToList();
             var others = EditorBuildSettings.scenes.Where(s => !ours.Contains(s.path));
             EditorBuildSettings.scenes = ours.Select(p => new EditorBuildSettingsScene(p, true)).Concat(others).ToArray();
         }
@@ -710,6 +726,13 @@ namespace TSAGame.EditorTools
             Glyph = Mat("Site_Glyph", new Color(0.4f, 0.9f, 1f), emission: new Color(0.4f, 0.9f, 1f) * 2.5f),
             OldRocket = Mat("Site_OldRocket", new Color(0.5f, 0.45f, 0.38f), 0.3f, metallic: 0.2f),
             Stars = StarMaterial(),
+            Pilot = Mat("Person_ColonyPilot", new Color(0.85f, 0.45f, 0.15f)),
+            Sand = Mat("World_Sand", new Color(0.76f, 0.62f, 0.4f), 0.15f),
+            Seabed = Mat("World_Seabed", new Color(0.36f, 0.36f, 0.34f), 0.1f),
+            TankBlue = Mat("Moon_TankBlue", new Color(0.2f, 0.45f, 0.95f), 0.5f),
+            TankWhite = Mat("Moon_TankWhite", new Color(0.9f, 0.9f, 0.92f), 0.5f),
+            TankRed = Mat("Moon_TankRed", new Color(0.9f, 0.2f, 0.15f), 0.5f),
+            Platform = Mat("Control_Platform", new Color(0.16f, 0.18f, 0.22f), 0.6f, metallic: 0.5f),
         };
 
         static Material Mat(string name, Color color, float smoothness = 0.3f, Color? emission = null, bool unlit = false, float metallic = 0f)
