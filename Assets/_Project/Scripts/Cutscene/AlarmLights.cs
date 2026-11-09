@@ -27,7 +27,8 @@ namespace TSAGame
         {
             active = true;
             for (int i = 0; i < normalLights.Length; i++) normalLights[i].intensity = normalIntensities[i] * dimNormalTo;
-            if (alarmSound != null) alarmSound.Play();
+            if (alarmSound != null && alarmSound.clip != null) alarmSound.Play();
+            else AudioManager.StartLoop("alarm", Sfx.Alarm, 0.55f, 0.1f);
         }
 
         public void Stop()
@@ -35,7 +36,8 @@ namespace TSAGame
             active = false;
             foreach (var l in alarmLights) l.intensity = 0f;
             for (int i = 0; i < normalLights.Length; i++) normalLights[i].intensity = normalIntensities[i];
-            if (alarmSound != null) alarmSound.Stop();
+            if (alarmSound != null && alarmSound.clip != null) alarmSound.Stop();
+            else AudioManager.StopLoop("alarm", 0.4f);
         }
 
         void Update()

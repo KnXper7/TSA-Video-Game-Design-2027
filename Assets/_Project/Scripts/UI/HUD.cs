@@ -102,8 +102,16 @@ namespace TSAGame
             if (Instance == this) Instance = null;
         }
 
-        void OnXpGained(int amount, string reason) => ShowToast($"+{amount} XP  {reason}");
-        void OnLeveledUp(int level) => ShowToast($"LEVEL {level}!  +{GameState.PointsPerLevel} stat points");
+        void OnXpGained(int amount, string reason)
+        {
+            AudioManager.Play(Sfx.Pickup, 0.6f);
+            ShowToast($"+{amount} XP  {reason}");
+        }
+        void OnLeveledUp(int level)
+        {
+            AudioManager.Play(Sfx.LevelUp);
+            ShowToast($"LEVEL {level}!  +{GameState.PointsPerLevel} stat points");
+        }
 
         // ---------- Subtitles, objective, prompt ----------
 
@@ -220,10 +228,7 @@ namespace TSAGame
         {
             IsChoosing = true;
             int chosen = -1;
-            var previousLock = Cursor.lockState;
-            var previousVisible = Cursor.visible;
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            InputLock.Push(this);
 
             choiceRoot.gameObject.SetActive(true);
             for (int i = 0; i < options.Count; i++)
@@ -250,8 +255,7 @@ namespace TSAGame
 
             foreach (Transform child in choiceRoot) Destroy(child.gameObject);
             choiceRoot.gameObject.SetActive(false);
-            Cursor.lockState = previousLock;
-            Cursor.visible = previousVisible;
+            InputLock.Release(this);
             IsChoosing = false;
             onChosen?.Invoke(chosen);
         }

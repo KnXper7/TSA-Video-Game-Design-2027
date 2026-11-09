@@ -131,11 +131,13 @@ namespace TSAGame
             if (valve == valves[valveStep])
             {
                 valveStep++;
+                AudioManager.Play(Sfx.PowerUp, 0.6f);
                 HUD.Instance.ShowToast($"Valve open ({valveStep}/{valves.Length})");
             }
             else
             {
                 valveStep = 0;
+                AudioManager.Play(Sfx.Error);
                 HUD.Instance.ShowToast("Pressure dumped. All valves closed. Start again.");
             }
         }

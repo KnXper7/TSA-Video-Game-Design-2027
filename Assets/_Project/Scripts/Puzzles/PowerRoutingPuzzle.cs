@@ -39,8 +39,6 @@ namespace TSAGame
         public event Action Opened;
         public event Action Closed;
 
-        FirstPersonController player;
-        Interactor interactor;
         Canvas canvas;
         Text capacityText;
         Text goalText;
@@ -48,13 +46,13 @@ namespace TSAGame
         bool hintPlaying;
         int openedFrame;
 
+        void OnDisable() => InputLock.Release(this);
+
         void Awake()
         {
             EngineeringBonus = GameState.Instance != null && GameState.Instance.Check(Stat.Engineering, engineeringBonusThreshold);
             Grid = new PowerGrid(systems, baseCapacity + (EngineeringBonus ? engineeringBonusCells : 0));
             Grid.Changed += Refresh;
-            player = FindAnyObjectByType<FirstPersonController>();
-            interactor = FindAnyObjectByType<Interactor>();
             BuildPanel();
             canvas.gameObject.SetActive(false);
         }
@@ -72,9 +70,8 @@ namespace TSAGame
             IsOpen = true;
             openedFrame = Time.frameCount;
             canvas.gameObject.SetActive(true);
-            if (player != null) player.CanLook = false;
-            if (interactor != null) interactor.enabled = false;
-            FirstPersonController.LockCursor(false);
+            AudioManager.Play(Sfx.PowerUp, 0.5f);
+            InputLock.Push(this);
             Refresh();
             Opened?.Invoke();
         }
@@ -84,9 +81,7 @@ namespace TSAGame
             if (!IsOpen) return;
             IsOpen = false;
             canvas.gameObject.SetActive(false);
-            if (player != null) player.CanLook = true;
-            if (interactor != null) interactor.enabled = true;
-            FirstPersonController.LockCursor(true);
+            InputLock.Release(this);
             Closed?.Invoke();
         }
 

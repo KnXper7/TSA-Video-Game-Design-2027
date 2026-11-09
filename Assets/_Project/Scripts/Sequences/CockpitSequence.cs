@@ -71,7 +71,9 @@ namespace TSAGame
             state.AddXp(50, "Power restored");
 
             // The view
+            AudioManager.Play(Sfx.Door, 0.7f);
             yield return OpenShutter();
+            AudioManager.PlayMusic(Sfx.PadCalm, 4f);
             yield return Dialogue.Say(Speakers.Commander, "Blue oceans. Clouds. That's... that's home. Somehow I'm home.");
             yield return Dialogue.Say(Speakers.ShipAI, "Overlaying Earth's continents now.");
             yield return new WaitForSeconds(1f);
@@ -135,6 +137,8 @@ namespace TSAGame
             alarms.Trigger();
             yield return Dialogue.Say(Speakers.ShipAI, "Engines online. Beginning atmospheric entry. Please hold on to something. Anything.");
 
+            AudioManager.Play(Sfx.PowerUp);
+            AudioManager.StartLoop("rumble", Sfx.Rumble, 0.2f, 1f);
             Vector3 planetStart = planet != null ? planet.position : Vector3.zero;
             Vector3 planetEnd = planet != null ? planetStart - (planetStart - transform.position).normalized * planetApproachDistance : Vector3.zero;
 
@@ -143,9 +147,13 @@ namespace TSAGame
                 float k = t / landingDuration;
                 if (planet != null) planet.position = Vector3.Lerp(planetStart, planetEnd, k * k);
                 if (cameraShake != null) cameraShake.SetConstant(Mathf.Lerp(0.005f, 0.06f, k));
+                AudioManager.SetLoop("rumble", Mathf.Lerp(0.2f, 1f, k), Mathf.Lerp(0.8f, 1.3f, k));
                 yield return null;
             }
 
+            AudioManager.Play(Sfx.Impact);
+            AudioManager.StopLoop("rumble", 0.3f);
+            AudioManager.StopLoop("alarm", 0.3f);
             yield return hud.FadeTo(1f, 0.25f, Color.white);
             if (cameraShake != null) cameraShake.SetConstant(0f);
             yield return new WaitForSeconds(0.4f);

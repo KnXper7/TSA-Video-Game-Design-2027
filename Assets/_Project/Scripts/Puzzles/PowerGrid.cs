@@ -44,6 +44,7 @@ namespace TSAGame
         {
             if (!CanAdd(index)) return false;
             systems[index].allocated++;
+            AudioManager.Play(systems[index].Online ? Sfx.Success : Sfx.PowerUp, 0.6f);
             Changed?.Invoke();
             return true;
         }
@@ -52,6 +53,7 @@ namespace TSAGame
         {
             if (!CanRemove(index)) return false;
             systems[index].allocated--;
+            AudioManager.Play(Sfx.PowerDown, 0.6f);
             Changed?.Invoke();
             return true;
         }

@@ -59,6 +59,7 @@ namespace TSAGame
             hud.SetObjective("Find out what this station is doing (main terminal)");
             yield return Story.Use(targetTerminal);
             state.SetFlag("truth.targets");
+            AudioManager.Play(Sfx.Stinger);
             state.AddXp(60, "Discovery: the target list");
             yield return Dialogue.Play(
                 (Speakers.ShipAI, "This is a target list. Worlds ranked by their resources and by how well they can defend themselves."),
@@ -116,12 +117,14 @@ namespace TSAGame
                         state.SetFlag("station.entry_engineering");
                         state.AddXp(40, "Engineering: door power cut");
                         yield return Dialogue.Say(Speakers.ShipAI, "Power feed isolated. The door thinks it is closed. It is not.");
+                        AudioManager.Play(Sfx.Door);
                         door.SetActive(false);
                         break;
                     case 1 when state.Check(Stat.Navigation, statForShortcut):
                         state.SetFlag("station.entry_navigation");
                         state.AddXp(40, "Navigation: maintenance duct found");
                         yield return Dialogue.Say(Speakers.Commander, "There. A service duct runs right past the lock. I can reach the release from inside.");
+                        AudioManager.Play(Sfx.Door);
                         door.SetActive(false);
                         break;
                     case 2 when state.Trust >= trustForHelp:
@@ -129,6 +132,7 @@ namespace TSAGame
                         state.ChangeTrust(5);
                         state.AddXp(40, "Opened together");
                         yield return Dialogue.Say(Speakers.Pilot, "On three. One, two... there. Don't tell anyone I helped an Earther break and enter.");
+                        AudioManager.Play(Sfx.Door);
                         door.SetActive(false);
                         break;
                     case 2:
@@ -141,6 +145,7 @@ namespace TSAGame
                         yield return Story.Use(accessKey);
                         state.SetFlag("station.entry_search");
                         state.AddXp(20, "Access key found");
+                        AudioManager.Play(Sfx.Door);
                         door.SetActive(false);
                         break;
                     default:

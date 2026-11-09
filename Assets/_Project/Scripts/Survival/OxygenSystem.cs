@@ -45,7 +45,10 @@ namespace TSAGame
         {
             if (!Draining || depleted) return;
 
+            float before = Normalized;
             Current = Mathf.Max(0f, Current - DrainRate * Time.deltaTime);
+            // Warning beep every 5% once below a quarter tank.
+            if (Normalized < 0.25f && Mathf.Floor(before * 20f) != Mathf.Floor(Normalized * 20f)) AudioManager.Play(Sfx.Warning, 0.7f);
             if (HUD.Instance != null) HUD.Instance.SetOxygen(Normalized);
 
             if (Current <= 0f)

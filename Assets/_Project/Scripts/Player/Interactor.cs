@@ -9,6 +9,7 @@ namespace TSAGame
         [SerializeField] float range = 2.8f;
         [SerializeField] LayerMask mask = ~0;
 
+        readonly RaycastHit[] hits = new RaycastHit[8];
         Interactable current;
         float held;
 
@@ -24,7 +25,7 @@ namespace TSAGame
             var hud = HUD.Instance;
             if (hud == null) return;
 
-            if (Dialogue.IsPlaying || hud.IsChoosing)
+            if (InputLock.IsLocked)
             {
                 hud.SetPrompt(null);
                 held = 0f;
@@ -35,9 +36,22 @@ namespace TSAGame
             if (target != current) held = 0f;
             current = target;
 
-            if (current == null)
+            if (current == null || current.IsUsedUp)
             {
                 hud.SetPrompt(null);
+                return;
+            }
+
+            // Say why E does nothing, instead of hiding the prompt.
+            if (!current.isActiveAndEnabled)
+            {
+                hud.SetPrompt($"{current.Prompt}  (not yet)");
+                return;
+            }
+            if (Dialogue.IsPlaying)
+            {
+                held = 0f;
+                hud.SetPrompt($"{current.Prompt}  (after the conversation, [E] skips lines)");
                 return;
             }
 
@@ -62,10 +76,17 @@ namespace TSAGame
 
         Interactable FindTarget()
         {
+            // The camera sits inside the top of the player's own capsule, so looking down used to hit the player's
+            // body first and nothing could be selected. Take the nearest hit that isn't part of the player.
             var ray = new Ray(viewCamera.transform.position, viewCamera.transform.forward);
-            if (!Physics.Raycast(ray, out var hit, range, mask, QueryTriggerInteraction.Ignore)) return null;
-            var interactable = hit.collider.GetComponentInParent<Interactable>();
-            return interactable != null && interactable.IsAvailable ? interactable : null;
+            int count = Physics.RaycastNonAlloc(ray, hits, range, mask, QueryTriggerInteraction.Ignore);
+            RaycastHit? nearest = null;
+            for (int i = 0; i < count; i++)
+            {
+                if (hits[i].collider.transform.IsChildOf(transform)) continue;
+                if (nearest == null || hits[i].distance < nearest.Value.distance) nearest = hits[i];
+            }
+            return nearest?.collider.GetComponentInParent<Interactable>();
         }
     }
 }

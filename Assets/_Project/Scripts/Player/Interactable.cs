@@ -24,7 +24,8 @@ namespace TSAGame
 
         public string Prompt => prompt;
         public float HoldDuration => holdDuration;
-        public bool IsAvailable => isActiveAndEnabled && !(singleUse && used);
+        public bool IsAvailable => isActiveAndEnabled && !IsUsedUp;
+        public bool IsUsedUp => singleUse && used;
 
         public void SetPrompt(string newPrompt) => prompt = newPrompt;
 
@@ -35,6 +36,7 @@ namespace TSAGame
         {
             if (!IsAvailable) return;
             used = true;
+            AudioManager.Play(Sfx.Interact, 0.7f);
             onInteract?.Invoke();
             Interacted?.Invoke(this);
             if (hideOnUse) gameObject.SetActive(false);

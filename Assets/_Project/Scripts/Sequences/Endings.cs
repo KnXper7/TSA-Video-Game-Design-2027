@@ -68,6 +68,9 @@ namespace TSAGame
             hud.SetObjective(null);
             hud.SetPrompt(null);
 
+            AudioManager.StopLoop("ambience", 3f);
+            AudioManager.PlayMusic(ending == Ending.NewBeginning ? Sfx.PadCalm : Sfx.PadDark, 3f);
+            AudioManager.Play(Sfx.Stinger);
             yield return hud.FadeTo(1f, 2.5f, Color.black);
             yield return hud.ShowTitle(title, "", 2.5f, color);
             foreach (var card in cards)

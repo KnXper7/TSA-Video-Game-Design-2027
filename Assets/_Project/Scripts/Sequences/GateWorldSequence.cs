@@ -16,11 +16,11 @@ namespace TSAGame
         [SerializeField] GlyphPuzzle puzzle;
         [SerializeField] int navigationForFreeClue = 3;
 
-        static readonly string[] TabletLines =
+        static readonly (string speaker, string text)[] TabletLines =
         {
-            "A carving of ships passing through rings. They built these to travel between worlds.",
-            "The same three symbols repeat beside the picture of a gate. It's an address.",
-            "This one shows a planet with pieces being lifted off it. That is... not travel.",
+            (Speakers.Commander, "A carving of ships passing through rings. They built these to travel between worlds."),
+            (Speakers.Commander, "The same three symbols repeat beside the picture of a gate. It's an address."),
+            (Speakers.Commander, "This one shows a planet with pieces being lifted off it. That is... not travel."),
         };
 
         int found;
@@ -87,7 +87,7 @@ namespace TSAGame
             GameState.Instance.SetFlag("tablet." + index);
             GameState.Instance.AddXp(25, "Coordinate tablet");
             UpdateObjective();
-            yield return Dialogue.Say(Speakers.Commander, TabletLines[Mathf.Min(index, TabletLines.Length - 1)]);
+            yield return Dialogue.Play(TabletLines[Mathf.Min(index, TabletLines.Length - 1)]);
         }
 
         IEnumerator OnWrongAlignment()

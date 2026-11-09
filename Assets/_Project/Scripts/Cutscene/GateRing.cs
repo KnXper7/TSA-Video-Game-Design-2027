@@ -28,7 +28,12 @@ namespace TSAGame
             SetOpen(0f);
         }
 
-        public void Open() => StartCoroutine(Animate(1f));
+        public void Open()
+        {
+            AudioManager.Play(Sfx.Whoosh, 0.8f);
+            AudioManager.StartLoop("gate", Sfx.GateHum, 0.7f, openDuration);
+            StartCoroutine(Animate(1f));
+        }
         public void Close() => StartCoroutine(Animate(0f));
 
         IEnumerator Animate(float target)

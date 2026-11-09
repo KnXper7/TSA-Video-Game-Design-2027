@@ -22,13 +22,13 @@ namespace TSAGame
         Text header;
         Text reminder;
         readonly List<(Text value, Button plus)> rows = new();
-        FirstPersonController player;
 
         public bool IsOpen => canvas != null && canvas.gameObject.activeSelf;
 
+        void OnDisable() => InputLock.Release(this);
+
         void Awake()
         {
-            player = FindAnyObjectByType<FirstPersonController>();
             Build();
             canvas.gameObject.SetActive(false);
         }
@@ -41,22 +41,21 @@ namespace TSAGame
             if (!GameInput.Stats.WasPressedThisFrame()) return;
             if (IsOpen) Close();
             // Only open during normal play: not while a puzzle panel or a dialogue choice has the cursor.
-            else if (Cursor.lockState == CursorLockMode.Locked && !Dialogue.IsPlaying) Open();
+            else if (!InputLock.IsLocked && !Dialogue.IsPlaying) Open();
         }
 
         void Open()
         {
             canvas.gameObject.SetActive(true);
-            if (player != null) player.CanLook = false;
-            FirstPersonController.LockCursor(false);
+            AudioManager.Play(Sfx.Interact, 0.5f);
+            InputLock.Push(this);
             Refresh();
         }
 
         void Close()
         {
             canvas.gameObject.SetActive(false);
-            if (player != null) player.CanLook = true;
-            FirstPersonController.LockCursor(true);
+            InputLock.Release(this);
         }
 
         void Spend(Stat stat)

@@ -79,24 +79,42 @@ namespace TSAGame
 
             IsPlaying = true;
 
+            // Voice: when a recording exists, the subtitle types out over most of its length.
+            // Fast-forwarded dialogue (SpeedMultiplier > 1) skips voice.
+            float voiceLength = 0f;
+            if (SpeedMultiplier <= 1f)
+                voiceLength = AudioManager.PlayVoice(VoiceBank.Get(line.speaker, line.text), VoiceBank.IsRadio(line.speaker));
+            float charsPerSecond = voiceLength > 0f
+                ? Mathf.Max(CharsPerSecond * 0.5f, line.text.Length / (voiceLength * 0.85f))
+                : CharsPerSecond * SpeedMultiplier;
+
             // Typewriter
             float shown = 0f;
+            int lastBlip = 0;
             while (shown < line.text.Length)
             {
-                shown += CharsPerSecond * SpeedMultiplier * Time.unscaledDeltaTime;
+                shown += charsPerSecond * Time.unscaledDeltaTime;
                 hud.ShowSubtitle(line.speaker, line.text.Substring(0, Mathf.Min(line.text.Length, (int)shown)));
+                if (voiceLength <= 0f && SpeedMultiplier <= 1f && (int)shown / 3 > lastBlip)
+                {
+                    lastBlip = (int)shown / 3;
+                    AudioManager.Play(Sfx.Blip);
+                }
                 yield return null;
                 if (GameInput.Interact.WasPressedThisFrame()) break;
             }
             hud.ShowSubtitle(line.speaker, line.text);
             yield return null; // so the press that finished typing doesn't also skip the hold
 
-            for (float t = 0; t < line.HoldTime / SpeedMultiplier; t += Time.unscaledDeltaTime)
+            // Hold: until the voice finishes (plus a beat), or the reading time for silent lines. Interact skips.
+            float hold = voiceLength > 0f ? 0.35f : line.HoldTime / SpeedMultiplier;
+            for (float t = 0; t < hold || AudioManager.VoicePlaying; t += Time.unscaledDeltaTime)
             {
                 if (GameInput.Interact.WasPressedThisFrame()) break;
                 yield return null;
             }
 
+            AudioManager.StopVoice();
             hud.HideSubtitle();
             IsPlaying = false;
         }
@@ -105,6 +123,7 @@ namespace TSAGame
         public static void Stop()
         {
             IsPlaying = false;
+            AudioManager.StopVoice();
             if (HUD.Instance != null) HUD.Instance.HideSubtitle();
         }
 

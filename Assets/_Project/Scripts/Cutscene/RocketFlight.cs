@@ -13,7 +13,11 @@ namespace TSAGame
 
         bool flying;
 
-        public void BeginApproach() => flying = true;
+        public void BeginApproach()
+        {
+            flying = true;
+            AudioManager.StartLoop("engine", Sfx.Engine, 0.35f, 2f);
+        }
 
         public void PullIntoGate() => StartCoroutine(Pull());
 
@@ -26,6 +30,8 @@ namespace TSAGame
         {
             yield return new WaitForSeconds(pullDelay);
             flying = false;
+            AudioManager.Play(Sfx.Whoosh);
+            AudioManager.SetLoop("engine", 0.6f, 1.4f);
             var startPosition = transform.position;
             var startScale = transform.localScale;
             for (float t = 0; t < pullDuration; t += Time.deltaTime)
@@ -37,6 +43,7 @@ namespace TSAGame
                 transform.Rotate(Vector3.forward, 540f * k * Time.deltaTime, Space.Self);
                 yield return null;
             }
+            AudioManager.StopLoop("engine", 0.2f);
             gameObject.SetActive(false);
         }
     }

@@ -4,7 +4,7 @@ namespace TSAGame
 {
     /// <summary>
     /// First-person walking and looking with keyboard/mouse or gamepad.
-    /// Turn off CanMove for seated sections (the cockpit); turn off CanLook while a UI panel is open.
+    /// Turn off CanMove for seated sections (the cockpit). Menus and panels block input through InputLock.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public class FirstPersonController : MonoBehaviour
@@ -28,6 +28,10 @@ namespace TSAGame
         float yaw;
         float startYaw;
         float verticalVelocity;
+        float stride;
+        int settleFrames = 2;
+
+        const float MaxMouseDeltaPerFrame = 120f;
 
         void Awake()
         {
@@ -35,24 +39,41 @@ namespace TSAGame
             yaw = startYaw = transform.eulerAngles.y;
         }
 
-        void OnEnable() => LockCursor(true);
-
-        public static void LockCursor(bool locked)
-        {
-            Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
-            Cursor.visible = !locked;
-        }
+        void OnEnable() => InputLock.ApplyCursor();
 
         void Update()
         {
-            bool uiBusy = HUD.Instance != null && HUD.Instance.IsChoosing;
-            if (CanLook && !uiBusy) Look();
-            Move(CanMove && !uiBusy);
+            bool menuOpen = InputLock.IsLocked;
+            RecoverCursor(menuOpen);
+            if (CanLook && !menuOpen) Look();
+            Move(CanMove && !menuOpen);
+        }
+
+        /// <summary>
+        /// In the editor, Esc frees the mouse. Clicking back into the game locks it again. The first frames after
+        /// locking are skipped because the mouse often reports one huge jump as it is captured.
+        /// </summary>
+        void RecoverCursor(bool menuOpen)
+        {
+            if (menuOpen) return;
+            if (Cursor.lockState != CursorLockMode.Locked)
+            {
+                settleFrames = 2;
+                var mouse = UnityEngine.InputSystem.Mouse.current;
+                if (mouse != null && mouse.leftButton.wasPressedThisFrame) InputLock.ApplyCursor();
+            }
         }
 
         void Look()
         {
-            Vector2 delta = GameInput.LookMouse.ReadValue<Vector2>() * mouseSensitivity
+            // Mouse look only while the cursor is captured, so moving a free cursor doesn't spin the camera.
+            Vector2 mouse = Vector2.zero;
+            if (Cursor.lockState == CursorLockMode.Locked)
+            {
+                if (settleFrames > 0) settleFrames--;
+                else mouse = Vector2.ClampMagnitude(GameInput.LookMouse.ReadValue<Vector2>(), MaxMouseDeltaPerFrame);
+            }
+            Vector2 delta = mouse * mouseSensitivity
                           + GameInput.LookStick.ReadValue<Vector2>() * (stickSensitivity * Time.deltaTime);
 
             yaw += delta.x;
@@ -81,6 +102,17 @@ namespace TSAGame
 
             if (controller.enabled)
                 controller.Move((horizontal + Vector3.up * verticalVelocity) * Time.deltaTime);
+
+            // Footsteps: one per stride while walking on the ground.
+            if (controller.isGrounded && horizontal.sqrMagnitude > 1f)
+            {
+                stride += horizontal.magnitude * Time.deltaTime;
+                if (stride > 2.2f)
+                {
+                    stride = 0f;
+                    AudioManager.Play(Sfx.Footstep, 0.5f, 0.15f);
+                }
+            }
         }
     }
 }

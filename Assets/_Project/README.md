@@ -66,6 +66,20 @@ Scripts point at the `MODEL_` parent, so nothing breaks. Trees and salvage crate
 - **Cutscene shots**: select *Cutscene Director* in `01_MissionControl`; move the markers under *Shot Markers* to reframe.
 - **Gate addresses**: the *Target* list on each gate console's `GlyphPuzzle`.
 
+## Sound and voice (placeholder MVP)
+
+- **Sound effects and music** are synthesized in code (`Scripts/Audio/SoundLibrary.cs`), so there are no audio files to manage yet. Each scene gets an ambience loop and a music pad (set in `AudioManager.SceneAudio`). To replace a sound with a real recording, put a clip named after it (for example `alarm.wav`, `footstep.wav`; names are in the `Sfx` class) in `Assets/_Project/Resources/Sfx/`.
+- **Voice**: every line of dialogue has a placeholder recording made with the Mac's built-in text-to-speech (COMMANDER: Samantha, COLONY PILOT: Daniel, SHIP AI: Fred, Mission Control: Reed and Eddy, heard through a radio filter). Subtitles keep pace with the voice.
+- **After changing or adding dialogue**, run `python3 Tools/generate_voices.py` (on a Mac) to record the new lines. A line with no recording still works; it just plays silently with a typing sound.
+- **Recording real voices**: `Tools/voice_lines.csv` is the full script, one row per line, with the file name each recording must be saved as in `Assets/_Project/Resources/Voice/`.
+- Volumes (master, music, effects, voice) are on the `[AudioManager]` object while playing.
+
+## Controls notes
+
+- Menus and panels (puzzles, the stats panel, dialogue choices) block walking and looking while open, and free the mouse. Everything goes through `Scripts/Player/InputLock.cs`.
+- In the editor, **Esc** frees the mouse; click the Game view to capture it again.
+- The prompt says why **E** does nothing: "(not yet)" for objects the story hasn't reached, "(after the conversation)" while someone is talking.
+
 ## Rebuilding
 
 **TSA > Build Intro Scenes** regenerates all seven scenes from `Editor/IntroSceneBuilder.cs` and `Editor/StorySceneBuilder.cs`. It **overwrites** them, so once you start hand-editing scenes or adding models, stop re-running it (or move your changes into the builder).

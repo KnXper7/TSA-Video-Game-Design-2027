@@ -21,6 +21,7 @@ namespace TSAGame
         public void ShowAlert()
         {
             if (statusText == null) return;
+            AudioManager.Play(Sfx.Warning);
             statusText.text = "WARNING  •  GRAVITY ANOMALY";
             statusText.color = new Color(1f, 0.75f, 0.2f);
         }
@@ -28,6 +29,8 @@ namespace TSAGame
         public void CutFeed()
         {
             lost = true;
+            AudioManager.Play(Sfx.Static);
+            AudioManager.StopLoop("gate", 1.5f);
             if (screen != null && lostSignalMaterial != null) screen.sharedMaterial = lostSignalMaterial;
             if (statusText != null)
             {

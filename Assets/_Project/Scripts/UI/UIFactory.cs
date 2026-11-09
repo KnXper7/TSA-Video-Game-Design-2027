@@ -92,6 +92,7 @@ namespace TSAGame
             button.colors = colors;
             var text = CreateText("Label", image.transform, label, fontSize, TextAnchor.MiddleCenter, Color.white);
             Stretch(text.rectTransform, 8, 4, 8, 4);
+            button.onClick.AddListener(() => AudioManager.Play(Sfx.Click));
             if (onClick != null) button.onClick.AddListener(onClick);
             return button;
         }

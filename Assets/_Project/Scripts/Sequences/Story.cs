@@ -82,6 +82,7 @@ namespace TSAGame
         {
             yield return BurnFuel();
             if (Endings.Playing) yield break;
+            AudioManager.Play(Sfx.Whoosh);
             SceneFlow.Load(nextScene, 1.5f, Color.white);
         }
 

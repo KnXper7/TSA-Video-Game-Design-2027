@@ -53,8 +53,21 @@ namespace TSAGame
             Stats = new InputAction("Stats", InputActionType.Button, "<Keyboard>/tab");
             Stats.AddBinding("<Gamepad>/select");
 
-            foreach (var action in new[] { Move, LookMouse, LookStick, Interact, Jump, Sprint, Skip, Choice1, Choice2, Choice3, Choice4, Stats })
-                action.Enable();
+            EnableAll();
+        }
+
+        static InputAction[] All => new[] { Move, LookMouse, LookStick, Interact, Jump, Sprint, Skip, Choice1, Choice2, Choice3, Choice4, Stats };
+
+        /// <summary>
+        /// This project enters Play mode without reloading scripts, so these actions outlive a Play session, and
+        /// Unity disables every action when Play mode stops. Turn them back on at the start of every session,
+        /// or the second Play onwards has no walking, looking or interacting.
+        /// </summary>
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void EnableAll()
+        {
+            foreach (var action in All)
+                if (!action.enabled) action.Enable();
         }
     }
 }

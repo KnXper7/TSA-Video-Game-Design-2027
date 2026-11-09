@@ -1,0 +1,133 @@
+file,speaker,text,source
+6f8c0a95.wav,SHIP AI,...,Assets/_Project/Scripts/Dialogue/Dialogue.cs
+88a766e2.wav,SHIP AI,"Commander. Commander, wake up.",Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+c7fb3e9a.wav,SHIP AI,"Commander, I need you conscious. Main power is down. Life support is running on reserve.",Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+1989a582.wav,COMMANDER,...What happened? Where's Mission Control?,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+e73433f0.wav,SHIP AI,Unknown. Unknown. And I would like to also say unknown.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+223ce4df.wav,SHIP AI,You're overclocking the power bus? That is not in the manual. ...It's working.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+037fca7b.wav,COMMANDER,Blue oceans. Clouds. That's... that's home. Somehow I'm home.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+6eaf150a.wav,SHIP AI,Overlaying Earth's continents now.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+bd5223fc.wav,SHIP AI,"They don't match. There is no Moon, only that small burnt one. The stars are wrong.",Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+3c1d8b48.wav,SHIP AI,"Commander, I regret to inform you that this is not Earth. I also regret to inform you that I don't know where we are.",Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+a0361f17.wav,SHIP AI,"Our orbit is decaying. Would you like our survival odds, or a comforting lie?",Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+8e1c1dd2.wav,SHIP AI,Thirty-one percent. I rounded up.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+1e593159.wav,SHIP AI,Everything is fine. We will definitely be fine. This is a normal Tuesday.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+0487f650.wav,COMMANDER,...Thanks.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+b6081d44.wav,SHIP AI,Rerouting all priorities to 'down'.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+bf563c0a.wav,SHIP AI,Engines online. Beginning atmospheric entry. Please hold on to something. Anything.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+7b42b592.wav,SHIP AI,Every gate and every harvester reports to this place. It has run for thousands of years with nobody here.,Assets/_Project/Scripts/Sequences/ControlSequence.cs
+389d48ab.wav,SHIP AI,"Commander, the star charts here match the first planet. It was never a second Earth. It was the builders' homeworld.",Assets/_Project/Scripts/Sequences/ControlSequence.cs
+fe1ac75c.wav,COMMANDER,"They drained it, left it, and it healed without them.",Assets/_Project/Scripts/Sequences/ControlSequence.cs
+60a64c8b.wav,SHIP AI,"The console is live. From here you can shut the harvesters down, turn them on other worlds, or lock the gates to one world.",Assets/_Project/Scripts/Sequences/ControlSequence.cs
+2b2aa9e8.wav,COMMANDER,The builders had this same choice. They chose to keep taking.,Assets/_Project/Scripts/Sequences/ControlSequence.cs
+3bb6a97d.wav,COLONY PILOT,"We shut them down. Both our worlds, together. That's the only version where nobody becomes them.",Assets/_Project/Scripts/Sequences/ControlSequence.cs
+94daba2d.wav,COLONY PILOT,I don't know what you'll choose. I know what my people would be afraid of.,Assets/_Project/Scripts/Sequences/ControlSequence.cs
+16357190.wav,COLONY PILOT,After everything? I trusted you.,Assets/_Project/Scripts/Sequences/ControlSequence.cs
+7561495d.wav,COLONY PILOT,I knew it. Earth first. It was always going to be Earth first.,Assets/_Project/Scripts/Sequences/ControlSequence.cs
+09b4e5be.wav,COLONY PILOT,You're just going to leave them? All of them?,Assets/_Project/Scripts/Sequences/ControlSequence.cs
+66298106.wav,COLONY PILOT,"I read the transmission logs while you were at the console. You knew, and you said nothing.",Assets/_Project/Scripts/Sequences/ControlSequence.cs
+3001ade6.wav,COLONY PILOT,Share the network with Earth? I can't even share the truth with you.,Assets/_Project/Scripts/Sequences/ControlSequence.cs
+9b8d0119.wav,COLONY PILOT,"Together, then. On three.",Assets/_Project/Scripts/Sequences/ControlSequence.cs
+ad598f80.wav,COMMANDER,You don't have to trust Earth. Trust what we both saw out there. Neither of our worlds survives this alone.,Assets/_Project/Scripts/Sequences/ControlSequence.cs
+3d640c1c.wav,COLONY PILOT,...That's the first thing an Earther has said that my people would believe. On three.,Assets/_Project/Scripts/Sequences/ControlSequence.cs
+e18d5393.wav,COLONY PILOT,Hand the gates to both worlds? I barely trust you. I'm not turning that key.,Assets/_Project/Scripts/Sequences/ControlSequence.cs
+4ff3f70b.wav,SHIP AI,No atmosphere. Your suit is all you have. You can refill at the ship.,Assets/_Project/Scripts/Sequences/FuelMoonSequence.cs
+5d623574.wav,COLONY PILOT,"Old machines everywhere. Someone mined this place hollow, long before us.",Assets/_Project/Scripts/Sequences/FuelMoonSequence.cs
+ec490b70.wav,SHIP AI,"The refinery needs coolant, run from the coldest tank to the hottest. Get it wrong and it dumps pressure.",Assets/_Project/Scripts/Sequences/FuelMoonSequence.cs
+c7c36509.wav,COLONY PILOT,I'll hold the pressure lever. Go!,Assets/_Project/Scripts/Sequences/FuelMoonSequence.cs
+69e67de2.wav,SHIP AI,Refining complete. There is enough for one full tank and one half tank.,Assets/_Project/Scripts/Sequences/FuelMoonSequence.cs
+c66c82a7.wav,COMMANDER,That gate brought me here. It can take us back.,Assets/_Project/Scripts/Sequences/FuelMoonSequence.cs
+b2e65f5f.wav,COLONY PILOT,And if it doesn't?,Assets/_Project/Scripts/Sequences/FuelMoonSequence.cs
+f7146859.wav,COLONY PILOT,Even. Fair enough.,Assets/_Project/Scripts/Sequences/FuelMoonSequence.cs
+b66fd4d8.wav,COLONY PILOT,You'd give me the full tank? ...Nobody on Planet X would believe an Earther did that.,Assets/_Project/Scripts/Sequences/FuelMoonSequence.cs
+59c78039.wav,COLONY PILOT,Of course. Earth first. I should have guessed.,Assets/_Project/Scripts/Sequences/FuelMoonSequence.cs
+c2130bbc.wav,COMMANDER,A carving of ships passing through rings. They built these to travel between worlds.,Assets/_Project/Scripts/Sequences/GateWorldSequence.cs
+fc8b9b10.wav,COMMANDER,The same three symbols repeat beside the picture of a gate. It's an address.,Assets/_Project/Scripts/Sequences/GateWorldSequence.cs
+833cf42c.wav,COMMANDER,This one shows a planet with pieces being lifted off it. That is... not travel.,Assets/_Project/Scripts/Sequences/GateWorldSequence.cs
+b156a271.wav,COLONY PILOT,That's not Planet X.,Assets/_Project/Scripts/Sequences/GateWorldSequence.cs
+d7a9be2c.wav,COMMANDER,It's not Earth either.,Assets/_Project/Scripts/Sequences/GateWorldSequence.cs
+6d430117.wav,SHIP AI,Good news: the gate works. Bad news: it is one of many. I am detecting dozens of linked gates.,Assets/_Project/Scripts/Sequences/GateWorldSequence.cs
+e3c13672.wav,COMMANDER,A network.,Assets/_Project/Scripts/Sequences/GateWorldSequence.cs
+01c265f6.wav,SHIP AI,Each gate needs an address set in these symbols. Set it wrong and we burn fuel going nowhere.,Assets/_Project/Scripts/Sequences/GateWorldSequence.cs
+aa4cd866.wav,COLONY PILOT,You're learning their machine faster than I am.,Assets/_Project/Scripts/Sequences/GateWorldSequence.cs
+4b7032a1.wav,SHIP AI,The address leads to a world with heavy machine activity. Something there is still working.,Assets/_Project/Scripts/Sequences/GateWorldSequence.cs
+5098b573.wav,SHIP AI,That address goes nowhere. The tablets in the ruins may hold the right symbols.,Assets/_Project/Scripts/Sequences/GateWorldSequence.cs
+f8e19b99.wav,COLONY PILOT,This was an ocean. Look at the old shoreline. It's a hundred meters above us.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+c7d07eb1.wav,SHIP AI,That tower is pumping what is left of the water through a gate. It is automated. Nobody is in charge.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+5be51d26.wav,SHIP AI,"Sealed, and the security system is live. We need a way in that doesn't set it off.",Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+5dda7877.wav,SHIP AI,This is a target list. Worlds ranked by their resources and by how well they can defend themselves.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+fa1bec33.wav,SHIP AI,Entry 41: Planet X. Rich in minerals. Defenses: minimal. Status: next.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+dc57bbe3.wav,COLONY PILOT,Next?,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+ae0cb71b.wav,SHIP AI,Entry 42: Earth. Large population. Water remaining. Status: queued.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+f0454cf5.wav,COMMANDER,The gate that grabbed my ship wasn't an accident. It was scouting.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+20da1fa0.wav,SHIP AI,The machines are not broken. They are doing exactly what they were built to do.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+6fc62fc9.wav,SHIP AI,The records name the network's control centre. I have its full gate address.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+d21da42c.wav,SHIP AI,I have two of the three symbols for the network's control centre. More records might give us the third.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+c6b04b1b.wav,COLONY PILOT,"If that list is real, my people have no time left.",Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+027b3550.wav,COMMANDER,Then we go to the place that gives the orders.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+be6b835a.wav,SHIP AI,Power feed isolated. The door thinks it is closed. It is not.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+0cda8ee9.wav,COMMANDER,There. A service duct runs right past the lock. I can reach the release from inside.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+40db775e.wav,COLONY PILOT,"On three. One, two... there. Don't tell anyone I helped an Earther break and enter.",Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+48455cc9.wav,COLONY PILOT,Put my hands in that machine because you say so? No.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+4057e34c.wav,SHIP AI,There is a wrecked maintenance drone behind the station. It may still carry an access key.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+2ad1e4f9.wav,SHIP AI,You don't have the training for that yet. Press Tab if you have stat points to spend.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+4455716e.wav,COMMANDER,"A recording. Their homeworld was running dry: water, metal, clean air.",Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+d75bbe6f.wav,SHIP AI,"Instead of fixing it, they built machines to take from other worlds. This network.",Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+e16a8e5e.wav,COMMANDER,"Evacuation orders. They knew their world was failing, so they built escape sites across the network.",Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+b46f92f8.wav,SHIP AI,The logs simply stop. The evacuation failed. The machines never noticed their makers were gone.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+59c4f796.wav,SHIP AI,A star chart of the builders' homeworld. Blue oceans. One small burnt moon.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+7540d093.wav,COLONY PILOT,That's where we met.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+7ca66ba9.wav,COMMANDER,It was never a second Earth. It was their home. It healed after they were gone.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+1d2d12ef.wav,SHIP AI,"Old human transmissions, trapped in the network's distortion. Earth called Planet X for nine years. The gates swallowed every signal.",Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+feb015aa.wav,SHIP AI,There is one more file. Earth's council closed the search early. The reason given: 'we cannot afford a rescue.',Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+2c7baa6a.wav,SHIP AI,The pilot is still at the door. They have not seen this.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+c3894154.wav,COLONY PILOT,So they tried. And then they gave up on us.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+af6036e9.wav,COLONY PILOT,...Thank you for not hiding the second part.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+be2bd154.wav,COLONY PILOT,"They tried? All this time, we thought they just left.",Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+c28c76d5.wav,SHIP AI,Understood. I will not mention it.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+2528faaa.wav,COLONY PILOT,One thing. That list says Earth is running dry. You told me it was a paradise.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+2e0e3c7b.wav,SHIP AI,Wrong address. The records in this station may hold the missing symbol.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
+f6e8c188.wav,SHIP AI,Hull integrity forty percent. We're on the ground. Mostly in one piece.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+2827d5b0.wav,COMMANDER,Mostly?,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+768196dd.wav,SHIP AI,Your suit has limited oxygen. I suggest finding out if this air will kill you.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+fbb34d5e.wav,SHIP AI,Nitrogen seventy-eight percent. Oxygen twenty-one. Commander... it's the same air as Earth.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+61615c2e.wav,COMMANDER,That's not possible.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+490dc284.wav,SHIP AI,And yet you may remove your helmet.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+478da276.wav,SHIP AI,"That's enough to patch the hull. Now, about those structures in the trees.",Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+a044c45e.wav,COMMANDER,These aren't natural. Someone built these. A long time ago.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+4f8c9108.wav,SHIP AI,The markings match nothing in my database. And the stars last night matched no chart of Earth's sky.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+713de097.wav,COMMANDER,"A ring, big enough to fly a ship through. This is what pulled me in.",Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+dcb17c30.wav,SHIP AI,"It still has power. It is thousands of years old, and it still has power.",Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+3fd89cc5.wav,SHIP AI,"Commander, I'm picking up a radio signal. It's human. An old frequency. Very old.",Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+df5ddef8.wav,COMMANDER,Another rocket. Old. Patched together by hand.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+3b767e14.wav,SHIP AI,Commander. There is someone inside. Human.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+4c979363.wav,COMMANDER,Hello? I'm not armed. My ship came down past the ridge.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+4b81b4d8.wav,COLONY PILOT,...You're human. Where are you from?,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+82e9f929.wav,COMMANDER,Earth.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+372c8637.wav,COLONY PILOT,Earth. The world that left my great-grandparents behind.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+8747baf1.wav,SHIP AI,Three days of notes. They come from a colony on Planet X. They were sent to find Earth.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+c8db9251.wav,SHIP AI,"Also, they found your footprints yesterday.",Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+3e32942a.wav,COLONY PILOT,You can come out. I know you've been watching me.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+45572a51.wav,COLONY PILOT,...At least you admit it. I'd have done the same.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+1433a5f2.wav,COLONY PILOT,Sure you did.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+fbd469f9.wav,COLONY PILOT,I'm from the colony on Planet X. A hundred years cut off. We're running out of everything.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+05c337a1.wav,COLONY PILOT,They sent me to find Earth and ask for help. Is it true Earth has oceans you can drink from?,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+d9aa370c.wav,COLONY PILOT,Then we're both a long way from help.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+6254b965.wav,COLONY PILOT,It always is.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+f9f99db8.wav,COLONY PILOT,A paradise. That's what the old stories say too.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+9416d249.wav,SHIP AI,Neither ship has the fuel to leave. The burnt moon has ice we could refine.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+c29c69d9.wav,COLONY PILOT,"My ship can still fly that far. My pump, your refinery. Neither works alone.",Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+d546b409.wav,SHIP AI,"Commander, we are out of fuel cells.",Assets/_Project/Scripts/Sequences/Story.cs
+eed6e68b.wav,COLONY PILOT,"Take two of mine. We get home together, or not at all.",Assets/_Project/Scripts/Sequences/Story.cs
+0a4b9808.wav,SHIP AI,"Commander! Oxygen critical. Commander, do you read?",Assets/_Project/Scripts/Sequences/Story.cs
+f0c6c0cb.wav,FLIGHT DIRECTOR,"All stations, this is Flight. Fourteen months out, and this is it. Final approach to Planet X.",Assets/_Project/Editor/IntroSceneBuilder.cs
+9aef834f.wav,CONTROLLER,"Telemetry is green across the board, Flight.",Assets/_Project/Editor/IntroSceneBuilder.cs
+b11f55dd.wav,FLIGHT DIRECTOR,"Commander, you're forty thousand kilometers out. The whole world is watching you.",Assets/_Project/Editor/IntroSceneBuilder.cs
+bd69d12f.wav,COMMANDER,"Copy, Flight. No pressure, then.",Assets/_Project/Editor/IntroSceneBuilder.cs
+901d6c95.wav,FLIGHT DIRECTOR,None at all. Bring it home.,Assets/_Project/Editor/IntroSceneBuilder.cs
+ac95ce2b.wav,CONTROLLER,"Flight, I've got a gravity spike. Right in front of the rocket.",Assets/_Project/Editor/IntroSceneBuilder.cs
+eede3221.wav,CONTROLLER,That's not possible. There's nothing there.,Assets/_Project/Editor/IntroSceneBuilder.cs
+072fbe86.wav,COMMANDER,"Flight, there's something in front of me. A ring... it's opening. I can't pull up—",Assets/_Project/Editor/IntroSceneBuilder.cs
+d8313e52.wav,CONTROLLER,Telemetry's gone. Flight... we've lost the signal.,Assets/_Project/Editor/IntroSceneBuilder.cs
+fead7dd4.wav,FLIGHT DIRECTOR,"Rocket, this is Flight. Do you read?",Assets/_Project/Editor/IntroSceneBuilder.cs
+bf85c720.wav,FLIGHT DIRECTOR,...Do you read?,Assets/_Project/Editor/IntroSceneBuilder.cs

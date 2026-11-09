@@ -27,19 +27,17 @@ namespace TSAGame
 
         int[] current;
         bool[] revealed;
-        FirstPersonController player;
-        Interactor interactor;
         Canvas canvas;
         Text status;
         readonly List<(Text glyph, Text hint)> dials = new();
         int openedFrame;
 
+        void OnDisable() => InputLock.Release(this);
+
         void Awake()
         {
             current = new int[target.Length];
             revealed = new bool[target.Length];
-            player = FindAnyObjectByType<FirstPersonController>();
-            interactor = FindAnyObjectByType<Interactor>();
             Build();
             canvas.gameObject.SetActive(false);
         }
@@ -64,9 +62,8 @@ namespace TSAGame
             IsOpen = true;
             openedFrame = Time.frameCount;
             canvas.gameObject.SetActive(true);
-            if (player != null) player.CanLook = false;
-            if (interactor != null) interactor.enabled = false;
-            FirstPersonController.LockCursor(false);
+            AudioManager.Play(Sfx.PowerUp, 0.5f);
+            InputLock.Push(this);
             status.text = "Set each ring, then align the gate. A wrong alignment burns a fuel cell.";
             status.color = new Color(0.85f, 0.95f, 1f);
             Refresh();
@@ -77,9 +74,7 @@ namespace TSAGame
             if (!IsOpen) return;
             IsOpen = false;
             canvas.gameObject.SetActive(false);
-            if (player != null) player.CanLook = true;
-            if (interactor != null) interactor.enabled = true;
-            FirstPersonController.LockCursor(true);
+            InputLock.Release(this);
         }
 
         void Update()
@@ -90,6 +85,7 @@ namespace TSAGame
         void Turn(int dial, int step)
         {
             current[dial] = (current[dial] + step + Glyphs.Length) % Glyphs.Length;
+            AudioManager.Play(Sfx.Tick);
             Refresh();
         }
 
@@ -107,10 +103,13 @@ namespace TSAGame
                 if (current[i] == target[i]) continue;
                 status.text = "MISALIGNED. The gate burned a fuel cell and went dark.";
                 status.color = new Color(1f, 0.45f, 0.35f);
+                AudioManager.Play(Sfx.Error);
                 Failed?.Invoke();
                 return;
             }
             IsSolved = true;
+            AudioManager.Play(Sfx.Success);
+            AudioManager.StartLoop("gate", Sfx.GateHum, 0.7f, 1.5f);
             Close();
             Solved?.Invoke();
         }
