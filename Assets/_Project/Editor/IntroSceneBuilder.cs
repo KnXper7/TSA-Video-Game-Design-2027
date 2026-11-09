@@ -1,0 +1,822 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using UnityEditor;
+using UnityEditor.Events;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
+namespace TSAGame.EditorTools
+{
+    /// <summary>
+    /// Builds the three intro scenes with placeholder geometry: TSA > Build Intro Scenes.
+    /// Every stand-in object sits under a "MODEL_..." parent. To swap in a real model, drop it under that parent
+    /// and delete the child named "Placeholder". Scripts reference the MODEL_ parent, so nothing breaks.
+    /// Re-running the builder overwrites these scenes, so make layout changes after you are happy with the structure.
+    /// </summary>
+    public static class IntroSceneBuilder
+    {
+        const string Root = "Assets/_Project";
+        const string ScenesDir = Root + "/Scenes";
+        const string MaterialsDir = Root + "/Materials";
+        const string PrefabsDir = Root + "/Prefabs";
+        const string SettingsDir = Root + "/Settings";
+
+        public static string ScenePath(string sceneName) => $"{ScenesDir}/{sceneName}.unity";
+
+        // Space for the Mission Control cutscene sits far from the room so the two never see each other.
+        static readonly Vector3 Space = new(0f, 0f, 8000f);
+
+        class Mats
+        {
+            public Material Floor, Wall, Desk, Screen, ScreenBlue, Operator, Director, Suit, Rocket, EngineGlow,
+                GateRing, GateCore, PlanetX, LostSignal, Cockpit, Console, ConsoleScreen, Seat, Shutter,
+                NotEarth, Moon, Grass, Hill, Bark, Leaves, Wreck, Scorch, Sensor, Crate, Beacon, Ruin, Glyph, OldRocket, Stars;
+        }
+
+        [MenuItem("TSA/Build Intro Scenes", priority = 0)]
+        public static void BuildAll()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogWarning("Stop Play mode before building the intro scenes.");
+                return;
+            }
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+
+            foreach (var dir in new[] { ScenesDir, MaterialsDir, PrefabsDir, SettingsDir }) EnsureFolder(dir);
+
+            var mats = CreateMaterials();
+            var post = CreatePostProfile();
+
+            BuildMissionControl(mats, post);
+            BuildCockpit(mats, post);
+            BuildLandingSite(mats, post);
+            RegisterScenes();
+
+            AssetDatabase.SaveAssets();
+            EditorSceneManager.OpenScene(ScenePath(SceneFlow.MissionControl));
+            Debug.Log("Intro scenes built. Press Play in 01_MissionControl to watch the intro and play through to the landing site.");
+        }
+
+        [MenuItem("TSA/Open Intro Scene", priority = 1)]
+        public static void OpenIntro()
+        {
+            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                EditorSceneManager.OpenScene(ScenePath(SceneFlow.MissionControl));
+        }
+
+        // =====================================================================
+        // 01 Mission Control: the opening cutscene
+        // =====================================================================
+
+        static void BuildMissionControl(Mats m, VolumeProfile post)
+        {
+            var scene = NewScene(post, ambient: new Color(0.08f, 0.1f, 0.14f), skybox: false);
+            Sun(Quaternion.Euler(25f, -40f, 0f), 1.4f);
+
+            // ---- The room ----
+            var room = new GameObject("Mission Control Room").transform;
+            Prim(PrimitiveType.Cube, "Floor", room, new Vector3(0, -0.1f, 0), new Vector3(24, 0.2f, 18), m.Floor);
+            Prim(PrimitiveType.Cube, "Ceiling", room, new Vector3(0, 7.1f, 0), new Vector3(24, 0.2f, 18), m.Wall);
+            Prim(PrimitiveType.Cube, "Wall Left", room, new Vector3(-12, 3.5f, 0), new Vector3(0.2f, 7, 18), m.Wall);
+            Prim(PrimitiveType.Cube, "Wall Right", room, new Vector3(12, 3.5f, 0), new Vector3(0.2f, 7, 18), m.Wall);
+            Prim(PrimitiveType.Cube, "Wall Back", room, new Vector3(0, 3.5f, -9), new Vector3(24, 7, 0.2f), m.Wall);
+            Prim(PrimitiveType.Cube, "Wall Front", room, new Vector3(0, 3.5f, 9), new Vector3(24, 7, 0.2f), m.Wall);
+
+            // Big screen fed by the tracking camera
+            var feed = LoadOrCreateRenderTexture($"{MaterialsDir}/TrackingFeed.renderTexture");
+            m.Screen.SetTexture("_BaseMap", feed);
+            var screenSlot = Slot("MainScreen", room, new Vector3(0, 4f, 8.85f), Vector3.zero);
+            var screen = Prim(PrimitiveType.Quad, "Placeholder", screenSlot, Vector3.zero, new Vector3(10, 5.6f, 1), m.Screen, collider: false);
+            var status = WorldText("Screen Status", room, new Vector3(0, 6.3f, 8.75f), new Vector2(1000, 80), 0.01f, 46, new Color(0.6f, 0.9f, 1f));
+            Prim(PrimitiveType.Quad, "Side Screen L", room, new Vector3(-8, 4f, 8.88f), new Vector3(5, 3, 1), m.ScreenBlue, collider: false);
+            Prim(PrimitiveType.Quad, "Side Screen R", room, new Vector3(8, 4f, 8.88f), new Vector3(5, 3, 1), m.ScreenBlue, collider: false);
+
+            // Desks and operators in three rows
+            var desks = new GameObject("Desks").transform;
+            desks.SetParent(room);
+            Transform alarmOperator = null;
+            int n = 0;
+            foreach (float z in new[] { 4f, 0f, -3.5f })
+            foreach (float x in new[] { -5.5f, 5.5f })
+            {
+                n++;
+                var desk = Slot($"Desk{n}", desks, new Vector3(x, 0, z), Vector3.zero);
+                Prim(PrimitiveType.Cube, "Placeholder", desk, new Vector3(0, 0.5f, 0), new Vector3(7, 1, 1.2f), m.Desk);
+                for (int s = -1; s <= 1; s++)
+                {
+                    Prim(PrimitiveType.Quad, $"Monitor {s + 2}", desk, new Vector3(s * 2.2f, 1.45f, 0.3f), new Vector3(1.4f, 0.8f, 1), m.ScreenBlue, collider: false);
+                    var op = Slot($"Operator{n}_{s + 2}", desk, new Vector3(s * 2.2f, 0, -1.1f), Vector3.zero);
+                    Prim(PrimitiveType.Capsule, "Placeholder", op, new Vector3(0, 0.9f, 0), new Vector3(0.6f, 0.9f, 0.6f), m.Operator);
+                    if (n == 4 && s == 0) alarmOperator = op;
+                }
+            }
+
+            var director = Slot("FlightDirector", room, new Vector3(0, 0, -6.5f), Vector3.zero);
+            Prim(PrimitiveType.Capsule, "Placeholder", director, new Vector3(0, 1f, 0), new Vector3(0.7f, 1f, 0.7f), m.Director);
+            var corporate = Slot("CorporateSponsor", room, new Vector3(-10f, 0, -7.6f), new Vector3(0, 150f, 0));
+            Prim(PrimitiveType.Capsule, "Placeholder", corporate, new Vector3(0, 1f, 0), new Vector3(0.7f, 1f, 0.7f), m.Suit);
+            Prim(PrimitiveType.Cube, "Phone", corporate, new Vector3(0.3f, 1.75f, 0.1f), new Vector3(0.08f, 0.16f, 0.02f), m.ScreenBlue, collider: false);
+            PointLight("Phone Glow", corporate, corporate.TransformPoint(new Vector3(0.35f, 1.75f, 0.4f)), new Color(0.5f, 0.75f, 1f), 1.5f, 3f);
+
+            // Lights and alarm
+            var normalLights = new List<Light>();
+            foreach (var p in new[] { new Vector3(-6, 6.5f, -4), new Vector3(6, 6.5f, -4), new Vector3(-6, 6.5f, 4), new Vector3(6, 6.5f, 4) })
+                normalLights.Add(PointLight("Ceiling Light", room, p, new Color(0.75f, 0.85f, 1f), 3f, 14f));
+            var alarmLights = new List<Light>();
+            foreach (var p in new[] { new Vector3(-11, 6, -6), new Vector3(11, 6, -6), new Vector3(-11, 6, 6), new Vector3(11, 6, 6) })
+                alarmLights.Add(PointLight("Alarm Light", room, p, new Color(1f, 0.1f, 0.05f), 0f, 18f));
+            var alarm = new GameObject("Alarm System").AddComponent<AlarmLights>();
+            alarm.gameObject.AddComponent<AudioSource>().playOnAwake = false;
+            Set(alarm, ("alarmLights", alarmLights.Cast<Object>().ToArray()), ("normalLights", normalLights.Cast<Object>().ToArray()),
+                ("alarmSound", alarm.GetComponent<AudioSource>()));
+
+            // ---- Space ----
+            var space = new GameObject("Space").transform;
+            space.position = Space;
+            Starfield(space, m.Stars, 2500f);
+
+            var planet = Slot("PlanetX", space, Space + new Vector3(0, -40, 900), Vector3.zero);
+            Prim(PrimitiveType.Sphere, "Placeholder", planet, Vector3.zero, Vector3.one * 600f, m.PlanetX, collider: false);
+            planet.gameObject.AddComponent<Spinner>();
+
+            var gate = new GameObject("Gate").transform;
+            gate.SetParent(space);
+            gate.position = Space + new Vector3(0, 0, 400);
+            Slot("GateFrame", gate, gate.position, Vector3.zero); // empty: drop the gate model here
+            var core = Prim(PrimitiveType.Sphere, "Gate Core", gate, Vector3.zero, Vector3.zero, m.GateCore, collider: false);
+            var gateLight = PointLight("Gate Glow", gate, gate.position, new Color(0.4f, 0.8f, 1f), 0f, 260f);
+            var line = gate.gameObject.AddComponent<LineRenderer>();
+            line.sharedMaterial = m.GateRing;
+            line.alignment = LineAlignment.View;
+            line.shadowCastingMode = ShadowCastingMode.Off;
+            var gateRing = gate.gameObject.AddComponent<GateRing>();
+            Set(gateRing, ("core", core.transform), ("glow", gateLight), ("radius", 28f), ("ringWidth", 2.2f));
+
+            var rocket = Slot("Rocket", space, Space, Vector3.zero);
+            Prim(PrimitiveType.Capsule, "Placeholder", rocket, Vector3.zero, new Vector3(1.6f, 4f, 1.6f), m.Rocket, Quaternion.Euler(90, 0, 0));
+            Prim(PrimitiveType.Sphere, "Engine Glow", rocket, new Vector3(0, 0, -4.1f), new Vector3(1.2f, 1.2f, 0.6f), m.EngineGlow, collider: false);
+            PointLight("Engine Light", rocket, rocket.position + new Vector3(0, 0, -5f), new Color(1f, 0.55f, 0.2f), 8f, 25f);
+            var flight = rocket.gameObject.AddComponent<RocketFlight>();
+            Set(flight, ("gate", gate), ("speed", 6f), ("pullDelay", 2f));
+
+            // Tracking camera that feeds the big screen
+            var trackingCam = NewCamera("Tracking Camera", rocket.position + new Vector3(8, 3, -16), Quaternion.identity, 40f, listener: false, post: false);
+            trackingCam.targetTexture = feed;
+            trackingCam.transform.SetParent(space, true);
+            Set(trackingCam.gameObject.AddComponent<TrackTarget>(), ("target", rocket));
+
+            var monitor = screenSlot.gameObject.AddComponent<MonitorScreen>();
+            Set(monitor, ("screen", screen.GetComponent<Renderer>()), ("lostSignalMaterial", m.LostSignal), ("statusText", status));
+
+            // ---- Cutscene ----
+            var cam = NewCamera("Cutscene Camera", new Vector3(0, 5.5f, -8.5f), Quaternion.identity, 50f, listener: true, post: true);
+            var markers = new GameObject("Shot Markers").transform;
+            var cutscene = new GameObject("Cutscene Director").AddComponent<CutsceneDirector>();
+            Set(cutscene, ("cutsceneCamera", cam), ("endTitle", "[GAME TITLE]"), ("endSubtitle", ""), ("nextScene", SceneFlow.Cockpit));
+
+            var screenCentre = new Vector3(0, 4f, 8.8f);
+            var shots = cutscene.Shots;
+            shots.Clear();
+
+            var s1 = Shot("1 Establishing", Marker("Shot1 From", markers, new Vector3(0, 5.5f, -8.5f), screenCentre),
+                Marker("Shot1 To", markers, new Vector3(0, 4.2f, -4.5f), screenCentre), 7f,
+                Line(Speakers.FlightDirector, "All stations, this is Flight. Fourteen months out, and this is it. Final approach to Planet X."),
+                Line(Speakers.Controller, "Telemetry is green across the board, Flight."));
+            UnityEventTools.AddPersistentListener(s1.onStart, new UnityAction(flight.BeginApproach));
+            shots.Add(s1);
+
+            shots.Add(Shot("2 Main Screen", Marker("Shot2 From", markers, new Vector3(1.4f, 2.3f, -5.2f), screenCentre),
+                Marker("Shot2 To", markers, new Vector3(0.7f, 2.6f, -3f), screenCentre), 6f,
+                Line(Speakers.FlightDirector, "Commander, you're forty thousand kilometers out. The whole world is watching you.")));
+
+            // Markers parented to the rocket so the camera rides along with it
+            var noseTarget = rocket.position + new Vector3(0, 0, 40);
+            var s3From = Marker("Shot3 From", rocket, rocket.position + new Vector3(7, 2.5f, -16), noseTarget);
+            var s3To = Marker("Shot3 To", rocket, rocket.position + new Vector3(4, 1.5f, -11), noseTarget);
+            var s3 = Shot("3 Rocket", s3From, s3To, 7f,
+                Line(Speakers.Commander, "Copy, Flight. No pressure, then."),
+                Line(Speakers.FlightDirector, "None at all. Bring it home."));
+            s3.fieldOfView = 55f;
+            shots.Add(s3);
+
+            // Over the operator's shoulder, looking at their monitor
+            var operatorMonitor = alarmOperator.position + new Vector3(0, 1.4f, 1.4f);
+            var s4 = Shot("4 Alarm", Marker("Shot4 From", markers, alarmOperator.position + new Vector3(2.1f, 1.8f, -1.3f), operatorMonitor),
+                Marker("Shot4 To", markers, alarmOperator.position + new Vector3(1.4f, 1.65f, -0.8f), operatorMonitor), 6f,
+                Line(Speakers.Controller, "Flight, I've got a gravity spike. Right in front of the rocket."),
+                Line(Speakers.Controller, "That's not possible. There's nothing there."));
+            s4.shake = 0.01f;
+            UnityEventTools.AddPersistentListener(s4.onStart, new UnityAction(alarm.Trigger));
+            UnityEventTools.AddPersistentListener(s4.onStart, new UnityAction(monitor.ShowAlert));
+            shots.Add(s4);
+
+            // Behind and beside the rocket, so it stays in the foreground with the gate ahead of it
+            var gateView = Space + new Vector3(0, 0, 330);
+            var s5 = Shot("5 The Gate", Marker("Shot5 From", markers, Space + new Vector3(22, 7, 110), gateView),
+                Marker("Shot5 To", markers, Space + new Vector3(15, 5, 150), gateView), 7f,
+                Line(Speakers.Commander, "Flight, there's something in front of me. A ring... it's opening. I can't pull up—"));
+            s5.fieldOfView = 45f;
+            s5.shake = 0.08f;
+            UnityEventTools.AddPersistentListener(s5.onStart, new UnityAction(gateRing.Open));
+            UnityEventTools.AddPersistentListener(s5.onStart, new UnityAction(flight.PullIntoGate));
+            shots.Add(s5);
+
+            var s6 = Shot("6 Signal Lost", Marker("Shot6 From", markers, new Vector3(0.4f, 2.2f, -8f), screenCentre),
+                Marker("Shot6 To", markers, new Vector3(0.2f, 2.4f, -7f), screenCentre), 6f,
+                Line(Speakers.Controller, "Telemetry's gone. Flight... we've lost the signal."),
+                Line(Speakers.FlightDirector, "Rocket, this is Flight. Do you read?"),
+                Line(Speakers.FlightDirector, "...Do you read?", 2.5f));
+            UnityEventTools.AddPersistentListener(s6.onStart, new UnityAction(monitor.CutFeed));
+            shots.Add(s6);
+
+            var phone = corporate.position + new Vector3(0, 1.6f, 0);
+            var s7 = Shot("7 Silence", Marker("Shot7 From", markers, new Vector3(-5.5f, 2.1f, -3.5f), phone),
+                Marker("Shot7 To", markers, new Vector3(-6.8f, 1.9f, -4.8f), phone), 5f);
+            s7.waitForLines = false;
+            UnityEventTools.AddPersistentListener(s7.onStart, new UnityAction(alarm.Stop));
+            shots.Add(s7);
+
+            EditorUtility.SetDirty(cutscene);
+            AddHud();
+            Save(scene, SceneFlow.MissionControl);
+        }
+
+        // =====================================================================
+        // 02 Cockpit: wake up, power puzzle, the view, crash landing
+        // =====================================================================
+
+        static void BuildCockpit(Mats m, VolumeProfile post)
+        {
+            var scene = NewScene(post, ambient: new Color(0.05f, 0.06f, 0.09f), skybox: false);
+            var sunAngle = Quaternion.Euler(12f, -65f, 0f);
+            Sun(sunAngle, 1.6f);
+
+            var cockpit = Slot("Cockpit", null, Vector3.zero, Vector3.zero);
+            var shell = new GameObject("Placeholder").transform;
+            shell.SetParent(cockpit, false);
+            Prim(PrimitiveType.Cube, "Floor", shell, new Vector3(0, -0.05f, 0.25f), new Vector3(4, 0.1f, 5.5f), m.Cockpit);
+            Prim(PrimitiveType.Cube, "Ceiling", shell, new Vector3(0, 2.65f, 0.25f), new Vector3(4, 0.1f, 5.5f), m.Cockpit);
+            Prim(PrimitiveType.Cube, "Wall Left", shell, new Vector3(-2, 1.3f, 0.25f), new Vector3(0.1f, 2.6f, 5.5f), m.Cockpit);
+            Prim(PrimitiveType.Cube, "Wall Right", shell, new Vector3(2, 1.3f, 0.25f), new Vector3(0.1f, 2.6f, 5.5f), m.Cockpit);
+            Prim(PrimitiveType.Cube, "Wall Back", shell, new Vector3(0, 1.3f, -2.5f), new Vector3(4, 2.6f, 0.1f), m.Cockpit);
+            // Front wall with a window opening (3 m x 1.4 m)
+            Prim(PrimitiveType.Cube, "Front Lower", shell, new Vector3(0, 0.4f, 3f), new Vector3(4, 0.8f, 0.1f), m.Cockpit);
+            Prim(PrimitiveType.Cube, "Front Upper", shell, new Vector3(0, 2.4f, 3f), new Vector3(4, 0.5f, 0.1f), m.Cockpit);
+            Prim(PrimitiveType.Cube, "Front Left", shell, new Vector3(-1.75f, 1.45f, 3f), new Vector3(0.5f, 1.4f, 0.1f), m.Cockpit);
+            Prim(PrimitiveType.Cube, "Front Right", shell, new Vector3(1.75f, 1.45f, 3f), new Vector3(0.5f, 1.4f, 0.1f), m.Cockpit);
+            var shutter = Prim(PrimitiveType.Cube, "Window Shutter", cockpit, new Vector3(0, 1.45f, 2.92f), new Vector3(3.1f, 1.5f, 0.06f), m.Shutter);
+
+            var seat = Slot("PilotSeat", cockpit, new Vector3(0, 0, -0.9f), Vector3.zero);
+            Prim(PrimitiveType.Cube, "Placeholder", seat, new Vector3(0, 0.35f, 0), new Vector3(0.8f, 0.7f, 0.7f), m.Seat, collider: false);
+            Prim(PrimitiveType.Cube, "Seat Back", seat, new Vector3(0, 1f, -0.35f), new Vector3(0.8f, 1.3f, 0.15f), m.Seat, collider: false);
+
+            var consoleSlot = Slot("MainConsole", cockpit, new Vector3(0, 0, 1.2f), Vector3.zero);
+            Prim(PrimitiveType.Cube, "Placeholder", consoleSlot, new Vector3(0, 0.75f, 0), new Vector3(2.6f, 0.2f, 0.9f), m.Console, Quaternion.Euler(-20, 0, 0));
+            Prim(PrimitiveType.Quad, "Console Screen", consoleSlot, new Vector3(0, 0.87f, 0.02f), new Vector3(1.4f, 0.6f, 1), m.ConsoleScreen, Quaternion.Euler(70, 0, 0), collider: false);
+            var console = consoleSlot.gameObject.AddComponent<Interactable>();
+            var consoleCollider = consoleSlot.gameObject.AddComponent<BoxCollider>();
+            consoleCollider.center = new Vector3(0, 0.8f, 0);
+            consoleCollider.size = new Vector3(2.6f, 0.4f, 0.9f);
+            Set(console, ("prompt", "Use power console"), ("singleUse", false));
+            var puzzle = consoleSlot.gameObject.AddComponent<PowerRoutingPuzzle>();
+
+            var interior = PointLight("Cabin Light", cockpit, new Vector3(0, 2.3f, 0), new Color(0.8f, 0.9f, 1f), 1.5f, 7f);
+            var alarmA = PointLight("Alarm Light L", cockpit, new Vector3(-1.6f, 2.2f, 0.8f), new Color(1f, 0.1f, 0.05f), 0f, 6f);
+            var alarmB = PointLight("Alarm Light R", cockpit, new Vector3(1.6f, 2.2f, 0.8f), new Color(1f, 0.1f, 0.05f), 0f, 6f);
+            var alarm = new GameObject("Alarm System").AddComponent<AlarmLights>();
+            alarm.gameObject.AddComponent<AudioSource>().playOnAwake = false;
+            Set(alarm, ("alarmLights", new Object[] { alarmA, alarmB }), ("normalLights", new Object[] { interior }),
+                ("alarmIntensity", 3f), ("alarmSound", alarm.GetComponent<AudioSource>()));
+
+            // Outside the window
+            var outside = new GameObject("Outside").transform;
+            Starfield(outside, m.Stars, 2500f);
+            // Off to the lower right so its curved edge and the burnt moon both show through the window
+            var planet = Slot("NotEarth", outside, new Vector3(250, -350, 1100), new Vector3(0, 0, 20));
+            Prim(PrimitiveType.Sphere, "Placeholder", planet, Vector3.zero, Vector3.one * 1000f, m.NotEarth, collider: false);
+            planet.gameObject.AddComponent<Spinner>();
+            var moon = Slot("BurntMoon", outside, new Vector3(-420, 160, 1300), Vector3.zero);
+            Prim(PrimitiveType.Sphere, "Placeholder", moon, Vector3.zero, Vector3.one * 110f, m.Moon, collider: false);
+
+            // Player, seated
+            var (player, cam) = Player(new Vector3(0, 0, -0.6f), 1.15f, seatedYawLimit: 75f);
+            var shake = cam.gameObject.AddComponent<CameraShake>();
+            var interactor = player.GetComponent<Interactor>();
+
+            var sequence = new GameObject("Cockpit Sequence").AddComponent<CockpitSequence>();
+            Set(sequence, ("player", player.GetComponent<FirstPersonController>()), ("interactor", interactor), ("console", console),
+                ("puzzle", puzzle), ("alarms", alarm), ("cameraShake", shake), ("windowShutter", shutter.transform), ("planet", planet));
+
+            AddHud();
+            Save(scene, SceneFlow.Cockpit);
+        }
+
+        // =====================================================================
+        // 03 Landing site: survival objectives on the planet that looks like Earth
+        // =====================================================================
+
+        static void BuildLandingSite(Mats m, VolumeProfile post)
+        {
+            var scene = NewScene(post, ambient: Color.clear, skybox: true);
+            Sun(Quaternion.Euler(38f, -35f, 0f), 1.5f);
+
+            var terrain = new GameObject("Terrain").transform;
+            Prim(PrimitiveType.Plane, "Ground", terrain, Vector3.zero, new Vector3(40, 1, 40), m.Grass);
+            var random = new System.Random(7);
+            for (int i = 0; i < 8; i++)
+            {
+                float angle = (float)random.NextDouble() * Mathf.PI * 2f;
+                float distance = 70f + (float)random.NextDouble() * 90f;
+                float size = 30f + (float)random.NextDouble() * 50f;
+                Prim(PrimitiveType.Sphere, "Hill", terrain, new Vector3(Mathf.Cos(angle) * distance, -size * 0.35f, Mathf.Sin(angle) * distance),
+                    new Vector3(size, size * 0.6f, size), m.Hill);
+            }
+
+            // Trees: one prefab, so replacing the prefab's model swaps every tree
+            var treePrefab = TreePrefab(m);
+            var forest = new GameObject("Forest").transform;
+            for (int i = 0; i < 70; i++)
+            {
+                var p = new Vector3(((float)random.NextDouble() - 0.5f) * 180f, 0, ((float)random.NextDouble() - 0.5f) * 180f);
+                if (p.magnitude < 18f) continue;                                      // keep the crash site clear
+                if (Vector3.Distance(p, new Vector3(45, 0, 95)) < 14f) continue;      // and the second rocket's clearing
+                var tree = (GameObject)PrefabUtility.InstantiatePrefab(treePrefab, forest);
+                tree.transform.position = p;
+                tree.transform.rotation = Quaternion.Euler(0, (float)random.NextDouble() * 360f, 0);
+                tree.transform.localScale = Vector3.one * (0.8f + (float)random.NextDouble() * 0.6f);
+            }
+
+            // Burnt moon in the sky
+            var moon = Slot("BurntMoon", null, new Vector3(500, 650, 1500), Vector3.zero);
+            Prim(PrimitiveType.Sphere, "Placeholder", moon, Vector3.zero, Vector3.one * 160f, m.Moon, collider: false);
+
+            // Crash site
+            var crash = Slot("CrashedRocket", null, new Vector3(0, 1.1f, 7f), new Vector3(0, 25f, 0));
+            Prim(PrimitiveType.Capsule, "Placeholder", crash, Vector3.zero, new Vector3(2.2f, 5f, 2.2f), m.Wreck, Quaternion.Euler(82, 0, 0));
+            Prim(PrimitiveType.Cylinder, "Scorch Mark", null, new Vector3(0, 0.01f, 7f), new Vector3(9, 0.01f, 13), m.Scorch, Quaternion.Euler(0, 25f, 0), collider: false);
+            PointLight("Smoulder", crash, crash.position + new Vector3(0, 1.5f, -4f), new Color(1f, 0.45f, 0.15f), 3f, 8f);
+
+            var sensorSlot = Slot("SensorKit", null, new Vector3(2.5f, 0, 3.2f), Vector3.zero);
+            Prim(PrimitiveType.Cube, "Placeholder", sensorSlot, new Vector3(0, 0.25f, 0), new Vector3(0.6f, 0.5f, 0.4f), m.Sensor);
+            var sensor = sensorSlot.gameObject.AddComponent<Interactable>();
+            Set(sensor, ("prompt", "Scan the atmosphere"), ("holdDuration", 2.5f));
+
+            // Salvage
+            var cratePrefab = CratePrefab(m);
+            var salvageRoot = new GameObject("Salvage").transform;
+            var salvage = new List<Object>();
+            var beacons = new List<Object>();
+            foreach (var p in new[] { new Vector3(-12, 0, 14), new Vector3(15, 0, -8), new Vector3(-7, 0, -17) })
+            {
+                var crate = (GameObject)PrefabUtility.InstantiatePrefab(cratePrefab, salvageRoot);
+                crate.transform.position = p;
+                salvage.Add(crate.GetComponent<Interactable>());
+                var beacon = Prim(PrimitiveType.Cylinder, "Salvage Beacon", salvageRoot, p + new Vector3(0, 8, 0), new Vector3(0.15f, 8f, 0.15f), m.Beacon, collider: false);
+                PointLight("Beacon Light", beacon.transform, p + new Vector3(0, 1.5f, 0), new Color(0.4f, 0.85f, 1f), 4f, 8f);
+                beacons.Add(beacon);
+            }
+
+            // Ruins
+            var ruins = Slot("Ruins", null, new Vector3(-40, 0, 55), Vector3.zero);
+            var ruinsPlaceholder = new GameObject("Placeholder").transform;
+            ruinsPlaceholder.SetParent(ruins, false);
+            int t = 0;
+            foreach (var p in new[] { new Vector3(-6, 0, 0), new Vector3(5, 0, -3), new Vector3(1, 0, 8), new Vector3(-9, 0, 10) })
+            {
+                float height = 14f + t * 4f;
+                var tower = Prim(PrimitiveType.Cube, $"Tower {++t}", ruinsPlaceholder, p + new Vector3(0, height / 2, 0), new Vector3(3.5f, height, 3.5f), m.Ruin,
+                    Quaternion.Euler(0, t * 17f, 0));
+                for (int g = 0; g < 4; g++)
+                    Prim(PrimitiveType.Cube, "Glyph", tower.transform, new Vector3(0, -0.3f + g * 0.12f, -0.51f), new Vector3(0.6f, 0.02f, 0.02f), m.Glyph, collider: false);
+            }
+            var ruinsZone = TriggerBox("Ruins Trigger", ruins, ruins.position + new Vector3(0, 4, 3), new Vector3(30, 10, 30));
+
+            // Second rocket and its radio signal
+            var oldRocket = Slot("SecondRocket", null, new Vector3(45, 0, 95), Vector3.zero);
+            Prim(PrimitiveType.Capsule, "Placeholder", oldRocket, new Vector3(0, 6, 0), new Vector3(2.6f, 6f, 2.6f), m.OldRocket);
+            var signalMarker = new GameObject("Signal Marker").transform;
+            signalMarker.position = oldRocket.position;
+            Prim(PrimitiveType.Cylinder, "Beam", signalMarker, new Vector3(0, 40, 0), new Vector3(0.4f, 40f, 0.4f), m.Beacon, collider: false);
+            PointLight("Signal Light", signalMarker, oldRocket.position + new Vector3(0, 13, 0), new Color(0.4f, 0.85f, 1f), 6f, 25f);
+            var signalZone = TriggerBox("Signal Trigger", oldRocket, oldRocket.position + new Vector3(0, 4, 0), new Vector3(18, 10, 18));
+
+            // Player
+            var (player, _) = Player(new Vector3(4.5f, 0, 1.5f), 1.65f, seatedYawLimit: 0f);
+            player.transform.rotation = Quaternion.Euler(0, -35f, 0); // facing the sensor kit, wreck to the side
+            var oxygen = player.AddComponent<OxygenSystem>();
+
+            var sequence = new GameObject("Landing Site Sequence").AddComponent<LandingSiteSequence>();
+            Set(sequence, ("player", player.GetComponent<FirstPersonController>()), ("oxygen", oxygen), ("airScanner", sensor),
+                ("salvage", salvage.ToArray()), ("salvageBeacons", beacons.ToArray()), ("ruinsZone", ruinsZone),
+                ("signalZone", signalZone), ("signalMarker", signalMarker.gameObject));
+
+            AddHud();
+            Save(scene, SceneFlow.LandingSite);
+        }
+
+        // =====================================================================
+        // Shared pieces
+        // =====================================================================
+
+        static (GameObject player, Camera cam) Player(Vector3 position, float eyeHeight, float seatedYawLimit)
+        {
+            var player = new GameObject("Player");
+            player.transform.position = position;
+            var controller = player.AddComponent<CharacterController>();
+            controller.height = 1.8f;
+            controller.radius = 0.35f;
+            controller.center = new Vector3(0, 0.9f, 0);
+
+            var head = new GameObject("Head").transform;
+            head.SetParent(player.transform, false);
+            head.localPosition = new Vector3(0, eyeHeight, 0);
+
+            var cam = NewCamera("Player Camera", Vector3.zero, Quaternion.identity, 70f, listener: true, post: true);
+            cam.nearClipPlane = 0.05f;
+            cam.transform.SetParent(head, false);
+            cam.transform.localPosition = Vector3.zero;
+            cam.transform.localRotation = Quaternion.identity;
+
+            var fps = player.AddComponent<FirstPersonController>();
+            Set(fps, ("cameraPivot", head), ("seatedYawLimit", seatedYawLimit));
+            var interactor = player.AddComponent<Interactor>();
+            Set(interactor, ("viewCamera", cam));
+            return (player, cam);
+        }
+
+        static void AddHud()
+        {
+            var hud = new GameObject("HUD").AddComponent<HUD>();
+            hud.BuildDefaultLayout();
+        }
+
+        static Scene NewScene(VolumeProfile post, Color ambient, bool skybox)
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            if (skybox)
+            {
+                RenderSettings.skybox = AssetDatabase.GetBuiltinExtraResource<Material>("Default-Skybox.mat");
+                RenderSettings.ambientMode = AmbientMode.Skybox;
+            }
+            else
+            {
+                RenderSettings.skybox = null;
+                RenderSettings.ambientMode = AmbientMode.Flat;
+                RenderSettings.ambientLight = ambient;
+            }
+            var volume = new GameObject("Global Volume").AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = post;
+            return scene;
+        }
+
+        static void Save(Scene scene, string sceneName)
+        {
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, ScenePath(sceneName));
+        }
+
+        static void RegisterScenes()
+        {
+            var ours = new[] { SceneFlow.MissionControl, SceneFlow.Cockpit, SceneFlow.LandingSite }.Select(ScenePath).ToList();
+            var others = EditorBuildSettings.scenes.Where(s => !ours.Contains(s.path));
+            EditorBuildSettings.scenes = ours.Select(p => new EditorBuildSettingsScene(p, true)).Concat(others).ToArray();
+        }
+
+        static Light Sun(Quaternion rotation, float intensity)
+        {
+            var light = new GameObject("Sun").AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.transform.rotation = rotation;
+            light.intensity = intensity;
+            light.color = new Color(1f, 0.96f, 0.9f);
+            light.shadows = LightShadows.Soft;
+            RenderSettings.sun = light;
+            return light;
+        }
+
+        static Light PointLight(string name, Transform parent, Vector3 worldPosition, Color color, float intensity, float range)
+        {
+            var light = new GameObject(name).AddComponent<Light>();
+            light.transform.SetParent(parent, false);
+            light.transform.position = worldPosition;
+            light.type = LightType.Point;
+            light.color = color;
+            light.intensity = intensity;
+            light.range = range;
+            return light;
+        }
+
+        static Camera NewCamera(string name, Vector3 position, Quaternion rotation, float fov, bool listener, bool post)
+        {
+            var go = new GameObject(name);
+            go.transform.SetPositionAndRotation(position, rotation);
+            var cam = go.AddComponent<Camera>();
+            cam.fieldOfView = fov;
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = 6000f;
+            if (RenderSettings.skybox == null)
+            {
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = Color.black;
+            }
+            if (listener) go.AddComponent<AudioListener>();
+            if (name != "Tracking Camera") go.tag = "MainCamera";
+            cam.GetUniversalAdditionalCameraData().renderPostProcessing = post;
+            return cam;
+        }
+
+        /// <summary>An empty parent for a model. The placeholder geometry goes inside it.</summary>
+        static Transform Slot(string name, Transform parent, Vector3 worldPosition, Vector3 euler)
+        {
+            var slot = new GameObject("MODEL_" + name).transform;
+            if (parent != null) slot.SetParent(parent, false);
+            slot.SetPositionAndRotation(worldPosition, Quaternion.Euler(euler));
+            return slot;
+        }
+
+        static GameObject Prim(PrimitiveType type, string name, Transform parent, Vector3 localPosition, Vector3 localScale, Material material,
+            Quaternion? localRotation = null, bool collider = true)
+        {
+            var go = GameObject.CreatePrimitive(type);
+            go.name = name;
+            if (parent != null) go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPosition;
+            go.transform.localRotation = localRotation ?? Quaternion.identity;
+            go.transform.localScale = localScale;
+            go.GetComponent<Renderer>().sharedMaterial = material;
+            if (!collider) Object.DestroyImmediate(go.GetComponent<Collider>());
+            return go;
+        }
+
+        static Transform Marker(string name, Transform parent, Vector3 worldPosition, Vector3 lookAt)
+        {
+            var marker = new GameObject(name).transform;
+            marker.SetParent(parent, false);
+            marker.SetPositionAndRotation(worldPosition, Quaternion.LookRotation(lookAt - worldPosition));
+            return marker;
+        }
+
+        static CutsceneShot Shot(string name, Transform from, Transform to, float duration, params DialogueLine[] lines) =>
+            new() { name = name, from = from, to = to, duration = duration, lines = lines.ToList() };
+
+        static DialogueLine Line(string speaker, string text, float hold = 0f) => new(speaker, text, hold);
+
+        static TriggerZone TriggerBox(string name, Transform parent, Vector3 worldPosition, Vector3 size)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.position = worldPosition;
+            go.transform.rotation = Quaternion.identity;
+            var box = go.AddComponent<BoxCollider>();
+            box.isTrigger = true;
+            box.size = size;
+            return go.AddComponent<TriggerZone>();
+        }
+
+        static Text WorldText(string name, Transform parent, Vector3 worldPosition, Vector2 size, float scale, int fontSize, Color color)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Canvas));
+            go.transform.SetParent(parent, false);
+            go.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+            var rt = (RectTransform)go.transform;
+            rt.sizeDelta = size;
+            rt.position = worldPosition;
+            rt.localScale = Vector3.one * scale;
+            var text = UIFactory.CreateText("Text", go.transform, "", fontSize, TextAnchor.MiddleCenter, color);
+            UIFactory.Stretch(text.rectTransform);
+            return text;
+        }
+
+        static void Starfield(Transform parent, Material material, float radius)
+        {
+            var go = new GameObject("Starfield");
+            go.transform.SetParent(parent, false);
+            var ps = go.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.playOnAwake = false;
+            main.loop = false;
+            var emission = ps.emission;
+            emission.enabled = false;
+            var shape = ps.shape;
+            shape.enabled = false;
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.maxParticleSize = 0.02f;
+            Set(go.AddComponent<Starfield>(), ("radius", radius));
+        }
+
+        static void Set(Object target, params (string field, object value)[] fields)
+        {
+            var so = new SerializedObject(target);
+            foreach (var (field, value) in fields)
+            {
+                var property = so.FindProperty(field);
+                if (property == null)
+                {
+                    Debug.LogError($"{target.GetType().Name} has no serialized field '{field}'.");
+                    continue;
+                }
+                switch (value)
+                {
+                    case Object[] array:
+                        property.arraySize = array.Length;
+                        for (int i = 0; i < array.Length; i++) property.GetArrayElementAtIndex(i).objectReferenceValue = array[i];
+                        break;
+                    case Object reference: property.objectReferenceValue = reference; break;
+                    case float f: property.floatValue = f; break;
+                    case int i: property.intValue = i; break;
+                    case bool b: property.boolValue = b; break;
+                    case string s: property.stringValue = s; break;
+                    case Vector3 v: property.vector3Value = v; break;
+                    case Color c: property.colorValue = c; break;
+                }
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // ---------- Prefabs ----------
+
+        static GameObject TreePrefab(Mats m)
+        {
+            string path = $"{PrefabsDir}/Tree_Placeholder.prefab";
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (existing != null) return existing;
+            var tree = new GameObject("MODEL_Tree");
+            var placeholder = new GameObject("Placeholder").transform;
+            placeholder.SetParent(tree.transform, false);
+            Prim(PrimitiveType.Cylinder, "Trunk", placeholder, new Vector3(0, 3f, 0), new Vector3(0.6f, 3f, 0.6f), m.Bark);
+            Prim(PrimitiveType.Sphere, "Canopy", placeholder, new Vector3(0, 7.5f, 0), new Vector3(5f, 5.5f, 5f), m.Leaves, collider: false);
+            var prefab = PrefabUtility.SaveAsPrefabAsset(tree, path);
+            Object.DestroyImmediate(tree);
+            return prefab;
+        }
+
+        static GameObject CratePrefab(Mats m)
+        {
+            string path = $"{PrefabsDir}/SalvageCrate_Placeholder.prefab";
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (existing != null) return existing;
+            var crate = new GameObject("MODEL_SalvageCrate");
+            Prim(PrimitiveType.Cube, "Placeholder", crate.transform, new Vector3(0, 0.4f, 0), new Vector3(1.1f, 0.8f, 0.8f), m.Crate);
+            Set(crate.AddComponent<Interactable>(), ("prompt", "Salvage parts"), ("hideOnUse", true));
+            var prefab = PrefabUtility.SaveAsPrefabAsset(crate, path);
+            Object.DestroyImmediate(crate);
+            return prefab;
+        }
+
+        // ---------- Assets ----------
+
+        static Mats CreateMaterials() => new()
+        {
+            Floor = Mat("MC_Floor", new Color(0.12f, 0.13f, 0.15f), 0.5f),
+            Wall = Mat("MC_Wall", new Color(0.2f, 0.22f, 0.26f)),
+            Desk = Mat("MC_Desk", new Color(0.25f, 0.27f, 0.3f), 0.6f),
+            Screen = Mat("MC_MainScreen", Color.white, unlit: true),
+            ScreenBlue = Mat("MC_ScreenGlow", new Color(0.1f, 0.25f, 0.4f), emission: new Color(0.2f, 0.6f, 1f) * 1.5f),
+            Operator = Mat("Person_Operator", new Color(0.35f, 0.45f, 0.6f)),
+            Director = Mat("Person_FlightDirector", new Color(0.85f, 0.85f, 0.88f)),
+            Suit = Mat("Person_Suit", new Color(0.08f, 0.08f, 0.1f)),
+            Rocket = Mat("Rocket_Hull", new Color(0.88f, 0.88f, 0.9f), 0.7f, metallic: 0.3f),
+            EngineGlow = Mat("Rocket_Engine", new Color(1f, 0.5f, 0.2f), emission: new Color(1f, 0.45f, 0.1f) * 6f),
+            GateRing = Mat("Gate_Ring", new Color(0.25f, 0.75f, 1f) * 2.5f, unlit: true),
+            GateCore = Mat("Gate_Core", new Color(0.02f, 0.06f, 0.15f), emission: new Color(0.15f, 0.5f, 1f) * 1.3f),
+            PlanetX = Mat("Planet_X", new Color(0.55f, 0.45f, 0.4f), 0.1f),
+            LostSignal = Mat("MC_SignalLost", new Color(0.08f, 0.02f, 0.02f), unlit: true),
+            Cockpit = Mat("Cockpit_Panel", new Color(0.28f, 0.3f, 0.33f), 0.5f, metallic: 0.4f),
+            Console = Mat("Cockpit_Console", new Color(0.15f, 0.16f, 0.18f), 0.6f),
+            ConsoleScreen = Mat("Cockpit_Screen", new Color(0.05f, 0.15f, 0.1f), emission: new Color(0.2f, 1f, 0.6f) * 1.2f),
+            Seat = Mat("Cockpit_Seat", new Color(0.3f, 0.12f, 0.08f)),
+            Shutter = Mat("Cockpit_Shutter", new Color(0.18f, 0.18f, 0.2f), 0.4f, metallic: 0.6f),
+            NotEarth = Mat("Planet_NotEarth", new Color(0.15f, 0.4f, 0.75f), 0.6f),
+            Moon = Mat("Moon_Burnt", new Color(0.4f, 0.22f, 0.15f), 0.05f),
+            Grass = Mat("Site_Grass", new Color(0.25f, 0.45f, 0.2f), 0.1f),
+            Hill = Mat("Site_Hill", new Color(0.22f, 0.4f, 0.18f), 0.1f),
+            Bark = Mat("Site_Bark", new Color(0.3f, 0.2f, 0.12f), 0.1f),
+            Leaves = Mat("Site_Leaves", new Color(0.15f, 0.38f, 0.15f), 0.1f),
+            Wreck = Mat("Site_Wreck", new Color(0.55f, 0.55f, 0.57f), 0.5f, metallic: 0.4f),
+            Scorch = Mat("Site_Scorch", new Color(0.16f, 0.12f, 0.08f), 0f),
+            Sensor = Mat("Site_SensorKit", new Color(0.9f, 0.6f, 0.1f), emission: new Color(1f, 0.7f, 0.1f) * 0.8f),
+            Crate = Mat("Site_Crate", new Color(0.7f, 0.55f, 0.2f), 0.3f),
+            Beacon = Mat("Site_Beacon", new Color(0.4f, 0.85f, 1f) * 3f, unlit: true),
+            Ruin = Mat("Site_Ruin", new Color(0.75f, 0.75f, 0.7f), 0.8f),
+            Glyph = Mat("Site_Glyph", new Color(0.4f, 0.9f, 1f), emission: new Color(0.4f, 0.9f, 1f) * 2.5f),
+            OldRocket = Mat("Site_OldRocket", new Color(0.5f, 0.45f, 0.38f), 0.3f, metallic: 0.2f),
+            Stars = StarMaterial(),
+        };
+
+        static Material Mat(string name, Color color, float smoothness = 0.3f, Color? emission = null, bool unlit = false, float metallic = 0f)
+        {
+            string path = $"{MaterialsDir}/{name}.mat";
+            var shader = Shader.Find(unlit ? "Universal Render Pipeline/Unlit" : "Universal Render Pipeline/Lit");
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(shader);
+                AssetDatabase.CreateAsset(mat, path);
+            }
+            else mat.shader = shader;
+
+            mat.SetColor("_BaseColor", color);
+            if (!unlit)
+            {
+                mat.SetFloat("_Smoothness", smoothness);
+                mat.SetFloat("_Metallic", metallic);
+            }
+            if (emission.HasValue)
+            {
+                mat.EnableKeyword("_EMISSION");
+                mat.SetColor("_EmissionColor", emission.Value);
+                mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            }
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        static Material StarMaterial()
+        {
+            string path = $"{MaterialsDir}/Stars.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
+                AssetDatabase.CreateAsset(mat, path);
+            }
+            mat.SetTexture("_BaseMap", AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd"));
+            mat.SetColor("_BaseColor", Color.white * 2f);
+            // Additive transparency
+            mat.SetFloat("_Surface", 1f);
+            mat.SetFloat("_Blend", 2f);
+            mat.SetFloat("_SrcBlend", (float)BlendMode.One);
+            mat.SetFloat("_DstBlend", (float)BlendMode.One);
+            mat.SetFloat("_ZWrite", 0f);
+            mat.SetOverrideTag("RenderType", "Transparent");
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.renderQueue = (int)RenderQueue.Transparent;
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        static RenderTexture LoadOrCreateRenderTexture(string path)
+        {
+            var rt = AssetDatabase.LoadAssetAtPath<RenderTexture>(path);
+            if (rt != null) return rt;
+            rt = new RenderTexture(1280, 720, 24) { name = Path.GetFileNameWithoutExtension(path) };
+            AssetDatabase.CreateAsset(rt, path);
+            return rt;
+        }
+
+        static VolumeProfile CreatePostProfile()
+        {
+            string path = $"{SettingsDir}/IntroPostProcess.asset";
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+            if (profile != null) return profile;
+
+            profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profile, path);
+            var bloom = profile.Add<Bloom>(true);
+            bloom.intensity.Override(1.1f);
+            bloom.threshold.Override(1f);
+            var tonemapping = profile.Add<Tonemapping>(true);
+            tonemapping.mode.Override(TonemappingMode.ACES);
+            var vignette = profile.Add<Vignette>(true);
+            vignette.intensity.Override(0.28f);
+            foreach (var component in profile.components) AssetDatabase.AddObjectToAsset(component, profile);
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        static void EnsureFolder(string path)
+        {
+            if (AssetDatabase.IsValidFolder(path)) return;
+            var parent = Path.GetDirectoryName(path).Replace('\\', '/');
+            EnsureFolder(parent);
+            AssetDatabase.CreateFolder(parent, Path.GetFileName(path));
+        }
+    }
+
+    /// <summary>Builds the intro scenes automatically the first time this project opens with these scripts.</summary>
+    [InitializeOnLoad]
+    static class IntroSceneAutoBuild
+    {
+        const string SessionKey = "TSA.IntroSceneAutoBuild";
+
+        static IntroSceneAutoBuild()
+        {
+            if (SessionState.GetBool(SessionKey, false)) return;
+            SessionState.SetBool(SessionKey, true);
+            if (File.Exists(IntroSceneBuilder.ScenePath(SceneFlow.MissionControl))) return;
+            EditorApplication.delayCall += () =>
+            {
+                if (!EditorApplication.isPlayingOrWillChangePlaymode) IntroSceneBuilder.BuildAll();
+            };
+        }
+    }
+}

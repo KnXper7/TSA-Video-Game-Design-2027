@@ -6,7 +6,17 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/01_MissionControl.unity
+    guid: 4508d0ac57c4e416c8783647f23bd450
+  - enabled: 1
+    path: Assets/_Project/Scenes/02_Cockpit.unity
+    guid: d7468245e53cf44d98046c15673624b6
+  - enabled: 1
+    path: Assets/_Project/Scenes/03_LandingSite.unity
+    guid: e48453bc689f2405c82798d74e9e51b7
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
+    com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
