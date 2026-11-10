@@ -45,7 +45,7 @@ namespace TSAGame
         /// <summary>Locks the cursor for play, or frees it for menus. Only scenes with a player lock it.</summary>
         public static void ApplyCursor()
         {
-            bool play = !IsLocked && Object.FindAnyObjectByType<FirstPersonController>() != null;
+            bool play = !IsLocked && (Object.FindAnyObjectByType<FirstPersonController>() != null || Object.FindAnyObjectByType<ZeroGPlayer>() != null);
             Cursor.lockState = play ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = !play;
         }

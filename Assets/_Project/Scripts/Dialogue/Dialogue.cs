@@ -14,6 +14,10 @@ namespace TSAGame
         public const string Network = "NETWORK";
         public const string FlightDirector = "FLIGHT DIRECTOR";
         public const string Controller = "CONTROLLER";
+        public const string Technician = "TECHNICIAN";
+        public const string Engineer = "ENGINEER";
+        public const string Quartermaster = "QUARTERMASTER";
+        public const string Botanist = "BOTANIST";
     }
 
     [Serializable]

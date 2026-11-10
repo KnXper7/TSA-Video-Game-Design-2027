@@ -25,6 +25,12 @@ namespace TSAGame
         public const string Tick = "tick";
         public const string Door = "door";
         public const string Stinger = "stinger";
+        public const string Beep = "beep";
+        public const string Throw = "throw";
+        public const string Clank = "clank";
+        public const string Thud = "thud";
+        public const string PortalOpen = "portal_open";
+        public const string Explosion = "explosion";
 
         // Loops
         public const string Alarm = "alarm";
@@ -36,6 +42,9 @@ namespace TSAGame
         public const string ShipHum = "ship_hum";
         public const string Wind = "wind";
         public const string SpaceDrone = "space_drone";
+        public const string Roar = "rocket_roar";
+        public const string Reel = "reel";
+        public const string Breath = "breath";
         public const string PadTense = "pad_tense";
         public const string PadCalm = "pad_calm";
         public const string PadMystery = "pad_mystery";
@@ -84,6 +93,19 @@ namespace TSAGame
                 Sfx.Footstep => Envelope(Noise(0.09f, 0.25f, 0.5f), 0.003f, 0.08f),
                 Sfx.Door => Mix(Sweep(120f, 60f, 0.7f, Wave.Saw, 0.25f), Envelope(Noise(0.7f, 0.08f, 0.3f), 0.01f, 0.4f)),
                 Sfx.Stinger => Envelope(Chord(2.5f, 0.25f, 110f, 164.81f, 220f, 261.63f), 0.02f, 1.6f),
+
+                Sfx.Beep => Tone(880f, 0.16f, Wave.Sine, 0.004f, 0.05f, 0.3f),
+                Sfx.Throw => Envelope(Mul(Noise(0.28f, 0.35f, 0.5f), Lfo(0.28f, 3.5f, 0.9f)), 0.01f, 0.2f),
+                Sfx.Clank => Clank(0.7f),
+                Sfx.Thud => Envelope(Mix(Tone(70f, 0.3f, Wave.Sine, 0f, 0f, 0.6f), Noise(0.3f, 0.05f, 0.4f)), 0.002f, 0.25f),
+                Sfx.PortalOpen => Mix(Sweep(40f, 320f, 3.2f, Wave.Saw, 0.16f), Envelope(Chord(3.6f, 0.07f, 110f, 165f, 220.5f, 331f), 1.2f, 1.5f), Whoosh(3.2f)),
+                Sfx.Explosion => Mix(Impact(2.6f), Envelope(Noise(2.6f, 0.02f, 0.9f), 0.005f, 2.3f), Envelope(Noise(0.5f, 0.6f, 0.5f), 0.001f, 0.45f)),
+
+                // A rocket engine heard from the ground: deep rumble, a mid roar and fast crackle on top.
+                Sfx.Roar => Loop(Mix(Noise(6.5f, 0.012f, 0.75f), Noise(6.5f, 0.07f, 0.4f), Mul(Noise(6.5f, 0.5f, 0.3f), Crackle(6.5f)),
+                    Tone(31f, 6.5f, Wave.Saw, 0f, 0f, 0.12f)), 0.5f),
+                Sfx.Reel => Loop(Mix(Tone(190f, 2.5f, Wave.Saw, 0f, 0f, 0.05f), Tone(285f, 2.5f, Wave.Triangle, 0f, 0f, 0.05f), Noise(2.5f, 0.4f, 0.05f)), 0.5f),
+                Sfx.Breath => Mul(Noise(4f, 0.07f, 0.22f), Breath(4f)),
 
                 Sfx.Alarm => Concat(Tone(720f, 0.8f, Wave.Square, 0.01f, 0.01f, 0.13f), Tone(540f, 0.8f, Wave.Square, 0.01f, 0.01f, 0.13f)),
                 Sfx.Engine => Loop(Mix(Noise(4.5f, 0.03f, 0.5f), Tone(42f, 4.5f, Wave.Sine, 0f, 0f, 0.3f)), 0.5f),
@@ -217,6 +239,49 @@ namespace TSAGame
                 float t = (float)i / Rate;
                 value += ((float)random.NextDouble() * 2f - 1f - value) * 0.25f;
                 data[i] = (value * 1.4f * Mathf.Exp(-t * 4f) + Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(70f, 30f, t / seconds) * t) * 0.7f * Mathf.Exp(-t * 3f)) * 0.7f;
+            }
+            return data;
+        }
+
+        /// <summary>A struck piece of metal: several tones that don't line up, dying away quickly.</summary>
+        static float[] Clank(float seconds)
+        {
+            var data = new float[(int)(seconds * Rate)];
+            float[] freqs = { 523f, 1187f, 1733f, 2411f, 3290f };
+            for (int i = 0; i < data.Length; i++)
+            {
+                float t = (float)i / Rate, sum = 0f;
+                for (int f = 0; f < freqs.Length; f++)
+                    sum += Mathf.Sin(2f * Mathf.PI * freqs[f] * t) * Mathf.Exp(-t * (7f + f * 4f)) / (f + 1);
+                data[i] = sum * 0.35f + ((float)random.NextDouble() * 2f - 1f) * 0.3f * Mathf.Exp(-t * 60f);
+            }
+            return data;
+        }
+
+        /// <summary>Random sharp pops, for the crackle of a rocket plume.</summary>
+        static float[] Crackle(float seconds)
+        {
+            var data = new float[(int)(seconds * Rate)];
+            float level = 0f;
+            for (int i = 0; i < data.Length; i++)
+            {
+                if (random.NextDouble() < 0.004) level = 0.4f + (float)random.NextDouble() * 0.6f;
+                level *= 0.9985f;
+                data[i] = level;
+            }
+            return data;
+        }
+
+        /// <summary>One breath in and out over the length: the loudness curve of slow breathing in a helmet.</summary>
+        static float[] Breath(float seconds)
+        {
+            var data = new float[(int)(seconds * Rate)];
+            for (int i = 0; i < data.Length; i++)
+            {
+                float k = (float)i / data.Length;
+                float inhale = Mathf.Max(0f, Mathf.Sin(Mathf.PI * Mathf.Clamp01(k / 0.38f)));
+                float exhale = Mathf.Max(0f, Mathf.Sin(Mathf.PI * Mathf.Clamp01((k - 0.48f) / 0.45f)));
+                data[i] = inhale * 0.8f + exhale;
             }
             return data;
         }

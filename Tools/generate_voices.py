@@ -22,12 +22,16 @@ CSV = os.path.join(ROOT, "Tools", "voice_lines.csv")
 
 # Speaker constant -> (label shown in game, macOS voice, words per minute)
 VOICES = {
-    "Commander":      ("COMMANDER",       "Samantha", 175),
+    "Commander":      ("COMMANDER",       "Rocko (English (US))", 172),
     "Pilot":          ("COLONY PILOT",    "Daniel",   178),
     "ShipAI":         ("SHIP AI",         "Fred",     165),
     "FlightDirector": ("FLIGHT DIRECTOR", "Reed (English (US))", 172),
     "Controller":     ("CONTROLLER",      "Eddy (English (US))", 185),
     "Network":        ("NETWORK",         "Fred",     140),
+    "Technician":     ("TECHNICIAN",      "Flo (English (US))", 180),
+    "Engineer":       ("ENGINEER",        "Eddy (English (UK))", 170),
+    "Quartermaster":  ("QUARTERMASTER",   "Grandpa (English (US))", 165),
+    "Botanist":       ("BOTANIST",        "Shelley (English (US))", 172),
 }
 
 STRING = re.compile(r'(?<![$@\w])"((?:[^"\\\n]|\\.)*)"')

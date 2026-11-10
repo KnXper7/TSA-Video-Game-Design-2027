@@ -1,8 +1,19 @@
 file,speaker,text,source
 6f8c0a95.wav,SHIP AI,...,Assets/_Project/Scripts/Dialogue/Dialogue.cs
-88a766e2.wav,SHIP AI,"Commander. Commander, wake up.",Assets/_Project/Scripts/Sequences/CockpitSequence.cs
-c7fb3e9a.wav,SHIP AI,"Commander, I need you conscious. Main power is down. Life support is running on reserve.",Assets/_Project/Scripts/Sequences/CockpitSequence.cs
-1989a582.wav,COMMANDER,...What happened? Where's Mission Control?,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+829d6821.wav,COMMANDER,...Stars. Why am I looking at stars?,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+0e424db6.wav,COMMANDER,I'm outside. I'm outside the ship.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+8a2a47a2.wav,SHIP AI,Commander. A rock struck us as we left the ring. The hatch failed and you were pulled out.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+d19c400b.wav,SHIP AI,Your suit has no thrusters. You have four minutes of air.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+102cd80d.wav,COMMANDER,No thrusters. Nothing to push against.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+739f7561.wav,ENGINEER,"Stuck in zero gravity, that ball is the difference between drifting forever and getting home.",Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+00bf858f.wav,SHIP AI,It's holding. Now reel yourself in.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+c7d19850.wav,SHIP AI,Good. Now the next one. Work your way to the hull.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+d346dcf4.wav,COMMANDER,Got it. I've got the rail.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+1e112e6e.wav,SHIP AI,"Outer hatch cycling. Welcome back, Commander.",Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+0b3f05f1.wav,SHIP AI,"Commander? Commander, respond.",Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+b8de1cee.wav,SHIP AI,Hatch sealed. Cabin pressure is holding.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+13981232.wav,SHIP AI,"Commander, the strike took out main power. Life support is running on reserve.",Assets/_Project/Scripts/Sequences/CockpitSequence.cs
+c15ae01c.wav,COMMANDER,One problem at a time. Where are we? Where's Mission Control?,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
 e73433f0.wav,SHIP AI,Unknown. Unknown. And I would like to also say unknown.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
 223ce4df.wav,SHIP AI,You're overclocking the power bus? That is not in the manual. ...It's working.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
 037fca7b.wav,COMMANDER,Blue oceans. Clouds. That's... that's home. Somehow I'm home.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
@@ -117,17 +128,51 @@ d9aa370c.wav,COLONY PILOT,Then we're both a long way from help.,Assets/_Project/
 f9f99db8.wav,COLONY PILOT,A paradise. That's what the old stories say too.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
 9416d249.wav,SHIP AI,Neither ship has the fuel to leave. The burnt moon has ice we could refine.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
 c29c69d9.wav,COLONY PILOT,"My ship can still fly that far. My pump, your refinery. Neither works alone.",Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+306e3e57.wav,COMMANDER,I remember that morning. The last one I spent on Earth.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+67a7024f.wav,ENGINEER,There you are. She's fuelled and she's angry. Six hours to launch.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+352d9839.wav,ENGINEER,"Three things still aren't aboard: the water ration, the seed vault and the guidance core.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
+d48fabca.wav,COMMANDER,The three things I can't fly without.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+9d8183fd.wav,ENGINEER,Then stop standing here. Bring them to the cargo lift and I'll get them stowed.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+556c3b2e.wav,QUARTERMASTER,That's the last of Reservoir Three. Forty litres.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+5a9cd863.wav,QUARTERMASTER,Used to be you couldn't see the far shore of this lake.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+b48f14b2.wav,COMMANDER,I learned to swim here.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+6e785f6e.wav,QUARTERMASTER,"Then bring some back with you, Commander.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
+aa8e54d2.wav,COMMANDER,The guidance core. Every chart we have of a place no one has ever been.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+d4d58c5c.wav,COMMANDER,Fourteen months of flying on somebody's best guess.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+935f8df8.wav,BOTANIST,Commander. I was afraid you'd leave without it.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+e8dcaf90.wav,BOTANIST,"Every crop we still have, in one case. Wheat, rice, beans. Forty thousand seeds.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
+8b0db9c2.wav,BOTANIST,Nothing grows here anymore. Tell me honestly. Do you think Planet X has soil?,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+a26aa8c0.wav,BOTANIST,The truth. That's all any of us can ask for now.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+5c2f8dad.wav,BOTANIST,I hope you're right. I need you to be right.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+a7180081.wav,BOTANIST,Then don't come back until you do.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+a9e651d8.wav,ENGINEER,That's everything on the manifest. And one thing that isn't.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+80646016.wav,COMMANDER,It's... a lumpy metal ball.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+c062d106.wav,ENGINEER,"It's a grip anchor. See the bumps? They bite into anything. Rock, hull, ice.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
+9b5327bb.wav,ENGINEER,"If you're ever floating free with nothing to push against, throw it. It grips, the line goes tight, and you reel yourself in.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
+6e97d35a.wav,COMMANDER,You built this for me?,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+30001201.wav,ENGINEER,I built it so you'd come back. Promise me you'll come back.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+ebbaa02d.wav,ENGINEER,I'm holding you to that.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+38f0a2dc.wav,ENGINEER,Try hard.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+1eff32fd.wav,ENGINEER,As long as there's power to run them.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+557d3644.wav,ENGINEER,"This is it, then.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
+e27e5428.wav,COMMANDER,This is it.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+c417ec66.wav,CONTROLLER,T minus ten. Nine. Eight. Seven.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+f9bab9c2.wav,CONTROLLER,Main engine start. Five. Four. Three. Two. One.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+80600e4f.wav,CONTROLLER,Liftoff. We have liftoff.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+ebf145d0.wav,ENGINEER,Go on. Find us a way.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 d546b409.wav,SHIP AI,"Commander, we are out of fuel cells.",Assets/_Project/Scripts/Sequences/Story.cs
 eed6e68b.wav,COLONY PILOT,"Take two of mine. We get home together, or not at all.",Assets/_Project/Scripts/Sequences/Story.cs
 0a4b9808.wav,SHIP AI,"Commander! Oxygen critical. Commander, do you read?",Assets/_Project/Scripts/Sequences/Story.cs
-f0c6c0cb.wav,FLIGHT DIRECTOR,"All stations, this is Flight. Fourteen months out, and this is it. Final approach to Planet X.",Assets/_Project/Editor/IntroSceneBuilder.cs
-9aef834f.wav,CONTROLLER,"Telemetry is green across the board, Flight.",Assets/_Project/Editor/IntroSceneBuilder.cs
-b11f55dd.wav,FLIGHT DIRECTOR,"Commander, you're forty thousand kilometers out. The whole world is watching you.",Assets/_Project/Editor/IntroSceneBuilder.cs
-bd69d12f.wav,COMMANDER,"Copy, Flight. No pressure, then.",Assets/_Project/Editor/IntroSceneBuilder.cs
-901d6c95.wav,FLIGHT DIRECTOR,None at all. Bring it home.,Assets/_Project/Editor/IntroSceneBuilder.cs
-ac95ce2b.wav,CONTROLLER,"Flight, I've got a gravity spike. Right in front of the rocket.",Assets/_Project/Editor/IntroSceneBuilder.cs
-eede3221.wav,CONTROLLER,That's not possible. There's nothing there.,Assets/_Project/Editor/IntroSceneBuilder.cs
-072fbe86.wav,COMMANDER,"Flight, there's something in front of me. A ring... it's opening. I can't pull up—",Assets/_Project/Editor/IntroSceneBuilder.cs
-d8313e52.wav,CONTROLLER,Telemetry's gone. Flight... we've lost the signal.,Assets/_Project/Editor/IntroSceneBuilder.cs
-fead7dd4.wav,FLIGHT DIRECTOR,"Rocket, this is Flight. Do you read?",Assets/_Project/Editor/IntroSceneBuilder.cs
-bf85c720.wav,FLIGHT DIRECTOR,...Do you read?,Assets/_Project/Editor/IntroSceneBuilder.cs
+f0c6c0cb.wav,FLIGHT DIRECTOR,"All stations, this is Flight. Fourteen months out, and this is it. Final approach to Planet X.",Assets/_Project/Editor/OpeningSceneBuilder.cs
+9aef834f.wav,CONTROLLER,"Telemetry is green across the board, Flight.",Assets/_Project/Editor/OpeningSceneBuilder.cs
+1e471e87.wav,TECHNICIAN,He's actually going to make it.,Assets/_Project/Editor/OpeningSceneBuilder.cs
+1620c89a.wav,CONTROLLER,"Fourteen months, one pilot, and not a single missed burn. Of course he is.",Assets/_Project/Editor/OpeningSceneBuilder.cs
+255038b8.wav,TECHNICIAN,My kids are watching this at school. The whole planet is.,Assets/_Project/Editor/OpeningSceneBuilder.cs
+b11f55dd.wav,FLIGHT DIRECTOR,"Commander, you're forty thousand kilometers out. The whole world is watching you.",Assets/_Project/Editor/OpeningSceneBuilder.cs
+6f4736f5.wav,COMMANDER,"Copy, Flight. Tell the world I can see it from here. We're going to make it.",Assets/_Project/Editor/OpeningSceneBuilder.cs
+80e6346c.wav,CONTROLLER,"Flight, I have a gravity spike. Dead ahead of the rocket.",Assets/_Project/Editor/OpeningSceneBuilder.cs
+d51fbd2b.wav,TECHNICIAN,What is that?,Assets/_Project/Editor/OpeningSceneBuilder.cs
+849ebd2b.wav,CONTROLLER,It's not on any chart. It wasn't there a second ago.,Assets/_Project/Editor/OpeningSceneBuilder.cs
+8fc9d255.wav,FLIGHT DIRECTOR,"Commander, abort the approach. Pull away. Pull away now!",Assets/_Project/Editor/OpeningSceneBuilder.cs
+55ef18fc.wav,COMMANDER,"Flight, there's a ring out here. It's pulling me in. I can't break away—",Assets/_Project/Editor/OpeningSceneBuilder.cs
+32c61f90.wav,COMMANDER,"Flight? Flight, do you read—",Assets/_Project/Editor/OpeningSceneBuilder.cs

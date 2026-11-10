@@ -58,7 +58,7 @@ namespace TSAGame
                 UIFactory.Place(fuelText.rectTransform, new Vector2(0, 0), new Vector2(400, 40), new Vector2(40, 104));
                 fuelText.transform.SetAsFirstSibling();
             }
-            if (FindAnyObjectByType<FirstPersonController>() != null && GetComponent<StatsPanel>() == null)
+            if ((FindAnyObjectByType<FirstPersonController>() != null || FindAnyObjectByType<ZeroGPlayer>() != null) && GetComponent<StatsPanel>() == null)
                 gameObject.AddComponent<StatsPanel>();
 
             SetFade(startBlack ? 1f : 0f);
@@ -330,7 +330,8 @@ namespace TSAGame
             UIFactory.Stretch(title);
             titleGroup = title.gameObject.AddComponent<CanvasGroup>();
             titleGroup.blocksRaycasts = false;
-            titleText = UIFactory.CreateText("Title", title, "", 84, TextAnchor.MiddleCenter, Color.white);
+            titleText = UIFactory.CreateText("Title", title, "", 76, TextAnchor.MiddleCenter, Color.white);
+            titleText.font = UIFactory.TitleFont;
             UIFactory.Place(titleText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1600, 140), new Vector2(0, 30));
             titleSubText = UIFactory.CreateText("Subtitle", title, "", 30, TextAnchor.MiddleCenter, accent);
             UIFactory.Place(titleSubText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1600, 60), new Vector2(0, -60));

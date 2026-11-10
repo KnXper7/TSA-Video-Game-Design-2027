@@ -127,6 +127,30 @@ namespace TSAGame
             return count;
         }
 
+        /// <summary>Everything a save file needs.</summary>
+        [Serializable]
+        public class Snapshot
+        {
+            public string scene;
+            public int engineering, navigation, diplomacy, survival, level, xp, unspentPoints, trust, fuel;
+            public List<string> flags = new();
+        }
+
+        public Snapshot Capture(string scene) => new()
+        {
+            scene = scene, engineering = engineering, navigation = navigation, diplomacy = diplomacy, survival = survival,
+            level = level, xp = xp, unspentPoints = unspentPoints, trust = trust, fuel = fuel, flags = new List<string>(flags),
+        };
+
+        public void Restore(Snapshot s)
+        {
+            engineering = s.engineering; navigation = s.navigation; diplomacy = s.diplomacy; survival = s.survival;
+            level = Mathf.Max(1, s.level); xp = s.xp; unspentPoints = s.unspentPoints; trust = s.trust; fuel = s.fuel;
+            flags.Clear();
+            foreach (var flag in s.flags) flags.Add(flag);
+            FuelChanged?.Invoke(fuel);
+        }
+
         /// <summary>Back to a fresh game (used after an ending).</summary>
         public void ResetAll()
         {

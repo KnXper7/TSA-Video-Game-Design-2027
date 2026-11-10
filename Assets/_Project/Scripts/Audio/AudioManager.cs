@@ -22,7 +22,9 @@ namespace TSAGame
         // Ambience loop and music pad for each scene.
         static readonly Dictionary<string, (string ambience, string music)> SceneAudio = new()
         {
-            [SceneFlow.MissionControl] = (Sfx.RoomHum, Sfx.PadTense),
+            [SceneFlow.MissionControl] = (Sfx.SpaceDrone, Sfx.PadMystery),
+            [SceneFlow.Memory] = (Sfx.Wind, Sfx.PadCalm),
+            [SceneFlow.Adrift] = (Sfx.Breath, Sfx.PadDark),
             [SceneFlow.Cockpit] = (Sfx.ShipHum, Sfx.PadMystery),
             [SceneFlow.LandingSite] = (Sfx.Wind, Sfx.PadCalm),
             [SceneFlow.FuelMoon] = (Sfx.SpaceDrone, Sfx.PadMystery),
@@ -71,7 +73,24 @@ namespace TSAGame
             radioHigh.cutoffFrequency = 500f;
             SetRadio(false);
 
+            masterVolume = PlayerPrefs.GetFloat("tsa.volume.master", masterVolume);
+            musicVolume = PlayerPrefs.GetFloat("tsa.volume.music", musicVolume);
+            sfxVolume = PlayerPrefs.GetFloat("tsa.volume.sfx", sfxVolume);
+            voiceVolume = PlayerPrefs.GetFloat("tsa.volume.voice", voiceVolume);
+
             SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        /// <summary>Called by the options menu: stores the volumes and applies them to sounds that are already playing.</summary>
+        public void ApplyVolumes()
+        {
+            PlayerPrefs.SetFloat("tsa.volume.master", masterVolume);
+            PlayerPrefs.SetFloat("tsa.volume.music", musicVolume);
+            PlayerPrefs.SetFloat("tsa.volume.sfx", sfxVolume);
+            PlayerPrefs.SetFloat("tsa.volume.voice", voiceVolume);
+            foreach (var pair in loops)
+                if (!fades.ContainsKey(pair.Key)) pair.Value.source.volume = LoopVolume(pair.Key, pair.Value.volume);
+            voice.volume = voiceVolume * masterVolume;
         }
 
         // The scene you press Play in doesn't always raise sceneLoaded in the editor, so check it here too.

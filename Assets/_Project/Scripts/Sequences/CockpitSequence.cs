@@ -45,10 +45,10 @@ namespace TSAGame
 
             // Wake up
             yield return new WaitForSeconds(1f);
-            yield return Dialogue.Say(Speakers.ShipAI, "Commander. Commander, wake up.");
+            yield return Dialogue.Say(Speakers.ShipAI, "Hatch sealed. Cabin pressure is holding.");
             StartCoroutine(hud.FadeTo(0f, 4f, Color.black));
-            yield return Dialogue.Say(Speakers.ShipAI, "Commander, I need you conscious. Main power is down. Life support is running on reserve.");
-            yield return Dialogue.Say(Speakers.Commander, "...What happened? Where's Mission Control?");
+            yield return Dialogue.Say(Speakers.ShipAI, "Commander, the strike took out main power. Life support is running on reserve.");
+            yield return Dialogue.Say(Speakers.Commander, "One problem at a time. Where are we? Where's Mission Control?");
             yield return Dialogue.Say(Speakers.ShipAI, "Unknown. Unknown. And I would like to also say unknown.");
 
             // Phase 1: life support + sensors

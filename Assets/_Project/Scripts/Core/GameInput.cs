@@ -19,6 +19,9 @@ namespace TSAGame
         public static readonly InputAction Choice3;
         public static readonly InputAction Choice4;
         public static readonly InputAction Stats;
+        public static readonly InputAction Throw;
+        public static readonly InputAction Pull;
+        public static readonly InputAction Recall;
 
         static GameInput()
         {
@@ -53,10 +56,17 @@ namespace TSAGame
             Stats = new InputAction("Stats", InputActionType.Button, "<Keyboard>/tab");
             Stats.AddBinding("<Gamepad>/select");
 
+            Throw = new InputAction("Throw", InputActionType.Button, "<Mouse>/leftButton");
+            Throw.AddBinding("<Gamepad>/rightTrigger");
+            Pull = new InputAction("Pull", InputActionType.Button, "<Mouse>/rightButton");
+            Pull.AddBinding("<Gamepad>/leftTrigger");
+            Recall = new InputAction("Recall", InputActionType.Button, "<Keyboard>/r");
+            Recall.AddBinding("<Gamepad>/buttonNorth");
+
             EnableAll();
         }
 
-        static InputAction[] All => new[] { Move, LookMouse, LookStick, Interact, Jump, Sprint, Skip, Choice1, Choice2, Choice3, Choice4, Stats };
+        static InputAction[] All => new[] { Move, LookMouse, LookStick, Interact, Jump, Sprint, Skip, Choice1, Choice2, Choice3, Choice4, Stats, Throw, Pull, Recall };
 
         /// <summary>
         /// This project enters Play mode without reloading scripts, so these actions outlive a Play session, and

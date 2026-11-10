@@ -11,8 +11,13 @@ namespace TSAGame
     /// </summary>
     public static class UIFactory
     {
-        static Font font;
-        public static Font DefaultFont => font ? font : font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        static Font font, titleFont;
+
+        /// <summary>Body font (Rajdhani). Falls back to Unity's built-in font if the file is missing.</summary>
+        public static Font DefaultFont => font ? font : font = Resources.Load<Font>("Fonts/rajdhani_Rajdhani-SemiBold") ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+        /// <summary>Display font for titles (Michroma).</summary>
+        public static Font TitleFont => titleFont ? titleFont : titleFont = Resources.Load<Font>("Fonts/michroma_Michroma-Regular") ?? DefaultFont;
 
         public static Canvas CreateCanvas(string name, Transform parent, int sortingOrder)
         {
@@ -95,6 +100,38 @@ namespace TSAGame
             button.onClick.AddListener(() => AudioManager.Play(Sfx.Click));
             if (onClick != null) button.onClick.AddListener(onClick);
             return button;
+        }
+
+        /// <summary>A 0-1 slider with a label on the left.</summary>
+        public static Slider CreateSlider(string name, Transform parent, string label, float value, UnityAction<float> onChanged)
+        {
+            var row = CreateRect(name, parent);
+            var text = CreateText("Label", row, label, 28, TextAnchor.MiddleLeft, Color.white);
+            text.rectTransform.anchorMin = new Vector2(0, 0); text.rectTransform.anchorMax = new Vector2(0.38f, 1);
+            text.rectTransform.offsetMin = text.rectTransform.offsetMax = Vector2.zero;
+
+            var track = CreateImage("Track", row, new Color(1, 1, 1, 0.15f));
+            track.raycastTarget = true;
+            track.rectTransform.anchorMin = new Vector2(0.4f, 0.5f); track.rectTransform.anchorMax = new Vector2(1, 0.5f);
+            track.rectTransform.offsetMin = new Vector2(0, -6); track.rectTransform.offsetMax = new Vector2(0, 6);
+            var fillArea = CreateRect("Fill Area", track.transform);
+            Stretch(fillArea);
+            var fill = CreateImage("Fill", fillArea, new Color(0.55f, 0.85f, 1f));
+            Stretch(fill.rectTransform);
+            var handleArea = CreateRect("Handle Area", track.transform);
+            Stretch(handleArea);
+            var handle = CreateImage("Handle", handleArea, Color.white);
+            handle.raycastTarget = true;
+            handle.rectTransform.sizeDelta = new Vector2(18, 34);
+
+            var slider = track.gameObject.AddComponent<Slider>();
+            slider.fillRect = fill.rectTransform;
+            slider.handleRect = handle.rectTransform;
+            slider.targetGraphic = handle;
+            slider.minValue = 0f; slider.maxValue = 1f;
+            slider.SetValueWithoutNotify(value);
+            if (onChanged != null) slider.onValueChanged.AddListener(onChanged);
+            return slider;
         }
 
         /// <summary>Buttons need an EventSystem that reads the new Input System.</summary>
