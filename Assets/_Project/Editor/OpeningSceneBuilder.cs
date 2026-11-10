@@ -27,8 +27,12 @@ namespace TSAGame.EditorTools
 
         static void BuildMissionControl(Mats m, VolumeProfile post)
         {
-            var scene = NewScene(post, ambient: new Color(0.07f, 0.08f, 0.11f), skybox: false);
-            Sun(Quaternion.Euler(17f, -25f, 0f), 1.9f);
+            var scene = NewScene(SpacePostProfile(), ambient: new Color(0.05f, 0.065f, 0.1f), skybox: false);
+            // The sun sits ahead and to the upper left, so rocks and the rocket are edge-lit against it.
+            var sun = Sun(Quaternion.Euler(12f, 148f, 0f), 2.4f);
+            sun.color = new Color(0.82f, 0.9f, 1f);
+            SunFlare(sun);
+            RimLight(Quaternion.Euler(25f, -30f, 0f), new Color(0.45f, 0.6f, 1f), 0.55f);
 
             // ---- The room ----
             var room = new GameObject("Mission Control Room").transform;
@@ -60,6 +64,8 @@ namespace TSAGame.EditorTools
             var desks = new GameObject("Desks").transform;
             desks.SetParent(room);
             Transform alarmOperator = null;
+            string[] operators = { "OperatorA", "OperatorB", "OperatorC", "Technician" };
+            Color[] shirts = { Color.white, new Color(0.75f, 0.85f, 1f), new Color(1f, 0.9f, 0.8f), new Color(0.7f, 0.95f, 0.9f), new Color(0.9f, 0.9f, 0.9f) };
             int n = 0;
             foreach (float z in new[] { 4f, 0f, -3.5f })
             foreach (float x in new[] { -5.5f, 5.5f })
@@ -75,27 +81,31 @@ namespace TSAGame.EditorTools
                     var seatPosition = new Vector3(x + s * 2.2f, 0, z - 1.1f);
                     Prim(PrimitiveType.Cube, "Chair", desk, new Vector3(s * 2.2f, 0.22f, -1.12f), new Vector3(0.5f, 0.44f, 0.5f), m.Console, collider: false);
                     Prim(PrimitiveType.Cube, "Chair Back", desk, new Vector3(s * 2.2f, 0.7f, -1.4f), new Vector3(0.5f, 0.9f, 0.08f), m.Console, collider: false);
-                    var shirt = (n + s) % 3 == 0 ? m.Director : (n + s) % 3 == 1 ? m.Operator : ModelMats["Person_Teal"];
-                    var op = Person($"Operator{n}_{s + 2}", desk, seatPosition, 0f, true, shirt, m.Suit);
+                    bool raisesAlarm = n == 4 && s == 0;
+                    string who = raisesAlarm ? "Controller" : operators[(n * 3 + s + 1) % operators.Length];
+                    var op = Person($"Operator{n}_{s + 2}", desk, seatPosition, 0f, true, who, raisesAlarm ? Speakers.Controller : null,
+                        screenSlot, tint: shirts[(n + s * 2 + 6) % shirts.Length]);
                     if (n == 4 && s == 0) alarmOperator = op;
                 }
             }
 
-            Person("FlightDirector", room, new Vector3(0, 0, -6.5f), 0f, false, m.Director, m.Suit);
-            Person("Technician1", room, new Vector3(8.6f, 0, -6.6f), -60f, false, ModelMats["Person_Teal"], m.Suit);
-            Person("Technician2", room, new Vector3(7.4f, 0, -5.9f), 120f, false, m.Operator, m.Suit);
-            Person("Observer1", room, new Vector3(-8.2f, 0, -6.8f), 20f, false, m.Suit, m.Suit);
-            Person("Observer2", room, new Vector3(-7.2f, 0, -7.2f), 10f, false, m.Operator, m.Suit);
+            Person("FlightDirector", room, new Vector3(0, 0, -6.5f), 0f, false, "FlightDirector", Speakers.FlightDirector, screenSlot);
+            Person("Technician1", room, new Vector3(-2.6f, 0, -1.9f), 20f, false, "Technician", Speakers.Technician, screenSlot);
+            Person("Technician2", room, new Vector3(7.4f, 0, -5.9f), 10f, false, "OperatorB", null, screenSlot, tint: new Color(0.8f, 1f, 0.85f));
+            Person("Observer1", room, new Vector3(-8.2f, 0, -6.8f), 20f, false, "Quartermaster", null, screenSlot);
+            Person("Observer2", room, new Vector3(-7.2f, 0, -7.2f), 10f, false, "OperatorC", null, screenSlot, tint: new Color(1f, 0.85f, 0.85f));
 
             // Lights and alarm
             var normalLights = new List<Light>();
             foreach (var p in new[] { new Vector3(-6, 6.5f, -4), new Vector3(6, 6.5f, -4), new Vector3(-6, 6.5f, 4), new Vector3(6, 6.5f, 4) })
-                normalLights.Add(PointLight("Ceiling Light", room, p, new Color(0.8f, 0.88f, 1f), 26f, 20f));
+                normalLights.Add(PointLight("Ceiling Light", room, p, new Color(1f, 0.93f, 0.82f), 34f, 20f));
             var alarmLights = new List<Light>();
             foreach (var p in new[] { new Vector3(-11, 6, -6), new Vector3(11, 6, -6), new Vector3(-11, 6, 6), new Vector3(11, 6, 6) })
                 alarmLights.Add(PointLight("Alarm Light", room, p, new Color(1f, 0.1f, 0.05f), 0f, 18f));
             var alarm = new GameObject("Alarm System").AddComponent<AlarmLights>();
             Set(alarm, ("alarmLights", alarmLights.Cast<Object>().ToArray()), ("normalLights", normalLights.Cast<Object>().ToArray()));
+
+            InteriorVolume(room, new Vector3(0, 3.5f, 0), new Vector3(26, 9, 20));
 
             // ---- Space: also the backdrop of the main menu ----
             var space = new GameObject("Space").transform;
@@ -106,8 +116,10 @@ namespace TSAGame.EditorTools
             Nebula(space, Space + new Vector3(300, 1500, 4400), 2600f, "Nebula_Teal", new Color(0.1f, 0.6f, 0.6f));
 
             var planet = Slot("PlanetX", space, Space + new Vector3(-1100, -620, 3900), Vector3.zero);
-            Prim(PrimitiveType.Sphere, "Placeholder", planet, Vector3.zero, Vector3.one * 1500f, m.PlanetX, collider: false);
-            planet.gameObject.AddComponent<Spinner>();
+            var planetBody = Prim(PrimitiveType.Sphere, "Placeholder", planet, Vector3.zero, Vector3.one * 1500f, m.PlanetX, collider: false);
+            planetBody.AddComponent<Spinner>();
+            DressPlanet(planet, 1500f, "PlanetX", new Color(1f, 0.6f, 0.35f), -sun.transform.forward, rings: true);
+            Debris(space, Space + new Vector3(0, 0, 420), new Vector3(700, 300, 1000), 2200, new Vector2(0.2f, 2.2f), new Vector2(-16, -7), 26f);
 
             // Asteroids drifting through the menu view; a clear lane is left for the rocket
             var rocks = new GameObject("Asteroids").transform;
@@ -166,7 +178,8 @@ namespace TSAGame.EditorTools
             Prim(PrimitiveType.Cube, "Console", cabinShell, new Vector3(0, 0.4f, 0.95f), new Vector3(2.4f, 0.8f, 0.5f), m.Console, collider: false);
             for (int i = -1; i <= 1; i++)
                 Prim(PrimitiveType.Quad, "Panel", cabinShell, new Vector3(i * 1.0f, 1.5f, -1.14f), new Vector3(0.7f, 0.45f, 1), m.ConsoleScreen, collider: false);
-            Person("PilotInCabin", cabin, cabinOrigin + new Vector3(0, 0, 0), 0f, true, ModelMats["Person_Suit"], ModelMats["Person_Suit"], astronaut: true);
+            Person("PilotInCabin", cabin, cabinOrigin + new Vector3(0, 0, 0), 0f, true, "Commander", Speakers.Commander, astronaut: true, typing: false);
+            InteriorVolume(cabin, cabinOrigin + new Vector3(0, 1.2f, 0.5f), new Vector3(6, 5, 8));
             var flash = PointLight("Portal Light", cabin, cabinOrigin + new Vector3(0.6f, 1.7f, 2.4f), new Color(0.6f, 0.85f, 1f), 6f, 9f);
             flash.gameObject.AddComponent<FlickerLight>();
             PointLight("Cabin Alarm", cabin, cabinOrigin + new Vector3(-1.2f, 2f, -0.6f), new Color(1f, 0.15f, 0.1f), 3f, 5f);
@@ -379,7 +392,7 @@ namespace TSAGame.EditorTools
             Set(lift, ("prompt", "Load the cargo"), ("holdDuration", 1.5f));
             var liftBeacon = Beacon(liftSlot.position, m);
 
-            var engineerSlot = Person("Engineer", null, pad + new Vector3(-0.8f, 0, -9.6f), 180f, false, mm["Person_Orange"], mm["Person_Orange"]);
+            var engineerSlot = Person("Engineer", null, pad + new Vector3(-0.8f, 0, -9.6f), 180f, false, "Engineer", Speakers.Engineer, lookAtPlayer: true);
             var engineer = Talkable(engineerSlot, "Talk to the engineer");
             var ballSlot = Slot("GripBallGift", engineerSlot, engineerSlot.TransformPoint(new Vector3(0.3f, 1.2f, 0.55f)), Vector3.zero);
             Model("GripBall", ballSlot, Vector3.zero, Quaternion.identity, 1.8f);
@@ -410,7 +423,8 @@ namespace TSAGame.EditorTools
                         Quaternion.Euler(Range(random, -20, 20), 0, Range(random, -20, 20)), collider: false);
             }
             Prim(PrimitiveType.Sphere, "Last Seedling", greenhouse, new Vector3(0.2f, 0.75f, 0.6f), new Vector3(0.22f, 0.3f, 0.22f), m.Leaves, collider: false);
-            var botanistSlot = Person("Botanist", null, new Vector3(-26.5f, 0, 14.5f), 80f, false, mm["Person_Green"], m.Suit);
+            var botanistSlot = Person("Botanist", null, new Vector3(-26.5f, 0, 14.5f), 80f, false, "Botanist", Speakers.Botanist, lookAtPlayer: true,
+                tint: new Color(0.75f, 1f, 0.75f));
             var botanist = Talkable(botanistSlot, "Talk to the botanist");
             var seedCase = Slot("SeedVault", null, new Vector3(-25.9f, 0, 13.5f), new Vector3(0, 60, 0));
             Model("Crate", seedCase, Vector3.zero, Quaternion.identity, 1f, new() { ["Crate_Light"] = m.Leaves });
@@ -425,7 +439,7 @@ namespace TSAGame.EditorTools
             sign.text = "RESERVOIR 3\nCAPACITY 2%";
             var pump = pumpSlot.gameObject.AddComponent<Interactable>();
             Set(pump, ("prompt", "Fill the water canister"), ("holdDuration", 2.5f));
-            Person("Quartermaster", null, new Vector3(32.2f, 0, 28.2f), 270f, false, mm["Person_Grey"], m.Suit);
+            Person("Quartermaster", null, new Vector3(32.2f, 0, 28.2f), 270f, false, "Quartermaster", Speakers.Quartermaster, lookAtPlayer: true);
             var pumpBeacon = Beacon(pumpSlot.position + new Vector3(0, 1.6f, 0), m);
 
             // Supplies and the crowd that came to watch
@@ -442,12 +456,13 @@ namespace TSAGame.EditorTools
                 crate.name = "MODEL_Crate";
             }
             var crowd = new GameObject("Crowd").transform;
-            Material[] clothes = { mm["Person_Grey"], mm["Person_Green"], m.Operator, mm["Person_Teal"], m.Director };
+            string[] onlookers = { "OperatorA", "OperatorC", "Technician", "OperatorB", "Controller", "FlightDirector" };
+            Color[] clothes = { Color.white, new Color(1f, 0.8f, 0.7f), new Color(0.8f, 0.9f, 0.7f), new Color(0.85f, 0.8f, 1f), new Color(0.7f, 0.7f, 0.7f) };
             for (int i = 0; i < 9; i++)
             {
                 var p = new Vector3(37 + i * 2.1f + Range(random, -0.4f, 0.4f), 0, -22 + Range(random, -1.5f, 1.5f));
                 float yaw = Mathf.Atan2(pad.x - p.x, pad.z - p.z) * Mathf.Rad2Deg;
-                Person($"Onlooker{i + 1}", crowd, p, yaw, false, clothes[i % clothes.Length], m.Suit);
+                Person($"Onlooker{i + 1}", crowd, p, yaw, false, onlookers[i % onlookers.Length], null, rocketCentre, tint: clothes[i % clothes.Length]);
             }
             for (int i = 0; i < 12; i++)
                 Prim(PrimitiveType.Cube, "Fence Post", crowd, new Vector3(34 + i * 2.2f, 0.55f, -19.5f), new Vector3(0.1f, 1.1f, 0.1f), mm["Crate_Trim"]);
@@ -498,8 +513,11 @@ namespace TSAGame.EditorTools
 
         static void BuildAdrift(Mats m, VolumeProfile post)
         {
-            var scene = NewScene(post, ambient: new Color(0.1f, 0.11f, 0.15f), skybox: false);
-            Sun(Quaternion.Euler(22f, 24f, 0f), 1.9f);
+            var scene = NewScene(SpacePostProfile(), ambient: new Color(0.08f, 0.095f, 0.14f), skybox: false);
+            var sun = Sun(Quaternion.Euler(22f, 24f, 0f), 2.1f);
+            sun.color = new Color(0.85f, 0.92f, 1f);
+            SunFlare(sun);
+            RimLight(Quaternion.Euler(-15f, 200f, 0f), new Color(0.45f, 0.6f, 1f), 0.5f);
             var random = new System.Random(9);
 
             var outside = new GameObject("Space").transform;
@@ -507,8 +525,9 @@ namespace TSAGame.EditorTools
             Nebula(outside, new Vector3(-1500, 500, 1900), 2400f, "Nebula_Violet", new Color(0.5f, 0.25f, 0.9f));
             Nebula(outside, new Vector3(1700, -500, -1400), 2200f, "Nebula_Teal", new Color(0.1f, 0.6f, 0.6f));
             var planet = Slot("NotEarth", outside, new Vector3(-500, -620, 1300), new Vector3(0, 0, 20));
-            Prim(PrimitiveType.Sphere, "Placeholder", planet, Vector3.zero, Vector3.one * 1100f, m.NotEarth, collider: false);
-            planet.gameObject.AddComponent<Spinner>();
+            Prim(PrimitiveType.Sphere, "Placeholder", planet, Vector3.zero, Vector3.one * 1100f, m.NotEarth, collider: false).AddComponent<Spinner>();
+            DressPlanet(planet, 1100f, "NotEarth", new Color(0.35f, 0.6f, 1f), -sun.transform.forward, rings: false);
+            Debris(outside, new Vector3(0, 0, 60), new Vector3(500, 260, 500), 1600, new Vector2(0.1f, 1.2f));
             var moon = Slot("BurntMoon", outside, new Vector3(700, 300, 1500), Vector3.zero);
             Prim(PrimitiveType.Sphere, "Placeholder", moon, Vector3.zero, Vector3.one * 120f, m.Moon, collider: false);
 
@@ -628,12 +647,8 @@ namespace TSAGame.EditorTools
         static GameObject Model(string file, Transform parent, Vector3 localPosition, Quaternion localRotation, float scale,
             Dictionary<string, Material> overrides = null)
         {
-            var asset = AssetDatabase.LoadAssetAtPath<GameObject>($"{ModelsDir}/{file}.fbx");
-            if (asset == null)
-            {
-                Debug.LogError($"Model '{file}' is missing. Run Tools/blender/build_models.py.");
-                return new GameObject(file);
-            }
+            var asset = ModelPrefab(file);
+            if (asset == null) return new GameObject(file);
             var go = (GameObject)PrefabUtility.InstantiatePrefab(asset);
             if (parent != null) go.transform.SetParent(parent, false);
             go.transform.localPosition = localPosition;
@@ -646,10 +661,8 @@ namespace TSAGame.EditorTools
                 {
                     string key = materials[i] != null ? materials[i].name : "";
                     if (overrides != null && overrides.TryGetValue(key, out var replacement)) materials[i] = replacement;
-                    else if (ModelMats.TryGetValue(key, out var shared)) materials[i] = shared;
-                    else Debug.LogWarning($"Model '{file}' uses material '{key}', which the scene builder doesn't know.");
                 }
-                renderer.sharedMaterials = materials;
+                if (overrides != null) renderer.sharedMaterials = materials;
             }
             return go;
         }
@@ -676,15 +689,121 @@ namespace TSAGame.EditorTools
             return marker;
         }
 
-        static Transform Person(string name, Transform parent, Vector3 worldPosition, float yaw, bool seated, Material cloth, Material trousers,
-            bool astronaut = false)
+        /// <summary>
+        /// Places one of the characters from Tools/blender/build_people.py. Its prefab (Prefabs/People) carries the
+        /// PersonAnimator that makes it breathe, look around and talk.
+        /// </summary>
+        static Transform Person(string name, Transform parent, Vector3 worldPosition, float yaw, bool seated, string character,
+            string speaker = null, Transform lookAt = null, bool lookAtPlayer = false, Color? tint = null, bool astronaut = false, bool typing = true)
         {
             var slot = Slot(name, parent, worldPosition, new Vector3(0, yaw, 0));
-            var model = Model(seated ? "Person_Seated" : "Person_Standing", slot, Vector3.zero, Quaternion.identity, 1f,
-                new() { ["Person_Cloth"] = cloth, ["Person_Pants"] = trousers });
-            if (!astronaut)
-                foreach (var part in new[] { "Helmet", "Backpack" }) Child(model, part).gameObject.SetActive(false);
+            PersonInto(slot, character, seated, speaker, lookAt, lookAtPlayer, tint, astronaut, typing);
             return slot;
+        }
+
+        static void PersonInto(Transform slot, string character, bool seated, string speaker = null, Transform lookAt = null,
+            bool lookAtPlayer = false, Color? tint = null, bool astronaut = false, bool typing = true)
+        {
+            var prefab = PersonPrefab(character);
+            if (prefab == null) return;
+            var person = (GameObject)PrefabUtility.InstantiatePrefab(prefab, slot);
+            person.transform.localPosition = Vector3.zero;
+            person.transform.localRotation = Quaternion.identity;
+            var animator = person.GetComponent<PersonAnimator>();
+            Set(animator, ("pose", seated ? 1 : 0), ("speaker", speaker ?? ""), ("lookAtPlayer", lookAtPlayer), ("typing", typing),
+                ("clothesTint", tint ?? Color.white));
+            if (lookAt != null) Set(animator, ("lookAt", lookAt));
+            if (astronaut) AddSpaceGear(person.transform);
+        }
+
+        [System.Serializable] class PersonPart { public string name, kind, texture, normal; public float[] color; }
+        [System.Serializable] class PersonManifest { public PersonPart[] parts; }
+
+        /// <summary>The prefab for a character: the rigged model with its materials and a PersonAnimator. Made once.</summary>
+        static GameObject PersonPrefab(string character)
+        {
+            EnsureFolder($"{PrefabsDir}/People");
+            EnsureFolder($"{MaterialsDir}/People");
+            string path = $"{PrefabsDir}/People/{character}.prefab";
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab != null) return prefab;
+
+            string folder = $"{ModelsDir}/People";
+            var fbx = AssetDatabase.LoadAssetAtPath<GameObject>($"{folder}/{character}.fbx");
+            var json = AssetDatabase.LoadAssetAtPath<TextAsset>($"{folder}/{character}.json");
+            if (fbx == null || json == null)
+            {
+                Debug.LogError($"Character '{character}' is missing. Run Tools/blender/build_people.py.");
+                return null;
+            }
+            var manifest = JsonUtility.FromJson<PersonManifest>(json.text);
+
+            var root = new GameObject(character);
+            var model = (GameObject)PrefabUtility.InstantiatePrefab(fbx, root.transform);
+            model.name = "Model";
+            foreach (var part in manifest.parts)
+            {
+                var renderer = model.GetComponentsInChildren<Renderer>(true).FirstOrDefault(r => r.name == part.name || r.name.StartsWith(part.name + "."));
+                if (renderer == null) continue;
+                renderer.sharedMaterial = PersonMaterial(character, part, folder);
+                if (renderer is SkinnedMeshRenderer skinned) skinned.updateWhenOffscreen = true;     // posed far from the rest pose
+            }
+            root.AddComponent<PersonAnimator>();
+            prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        static Material PersonMaterial(string character, PersonPart part, string folder)
+        {
+            var mat = LoadOrCreate($"{MaterialsDir}/People/{character}_{part.name}.mat", () => new Material(Shader.Find("Universal Render Pipeline/Lit")));
+            if (!Fresh(mat)) return mat;
+
+            var texture = string.IsNullOrEmpty(part.texture) ? null : AssetDatabase.LoadAssetAtPath<Texture2D>($"{folder}/Textures/{part.texture}");
+            var normal = string.IsNullOrEmpty(part.normal) ? null : AssetDatabase.LoadAssetAtPath<Texture2D>($"{folder}/Textures/{part.normal}");
+            mat.SetTexture("_BaseMap", texture);
+            mat.SetColor("_BaseColor", texture != null || part.color == null ? Color.white : new Color(part.color[0], part.color[1], part.color[2]));
+            if (normal != null)
+            {
+                mat.SetTexture("_BumpMap", normal);
+                mat.EnableKeyword("_NORMALMAP");
+            }
+            mat.SetFloat("_Smoothness", part.kind switch { "skin" => 0.38f, "eyes" => 0.9f, "teeth" => 0.6f, "hair" => 0.3f, _ => 0.18f });
+            // Hair, lashes, brows and cloth edges are cut out of flat cards by their texture's transparency.
+            if (part.kind != "skin" && part.kind != "teeth" && part.kind != "tongue")
+            {
+                mat.SetFloat("_AlphaClip", 1f);
+                mat.SetFloat("_Cutoff", part.kind == "eyes" ? 0.05f : 0.35f);
+                mat.EnableKeyword("_ALPHATEST_ON");
+                mat.SetFloat("_Cull", 0f);
+                mat.renderQueue = (int)RenderQueue.AlphaTest;
+            }
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>Puts the helmet and life-support pack on a character, attached to the head and chest bones.</summary>
+        static void AddSpaceGear(Transform person)
+        {
+            var source = ModelPrefab("Person_Standing");
+            Transform Bone(string boneName) => person.GetComponentsInChildren<Transform>().FirstOrDefault(t => t.name.EndsWith(":" + boneName) || t.name == boneName);
+            void Attach(string partName, Transform bone, Vector3 offset, float scale)
+            {
+                var part = Child(source, partName);
+                if (bone == null || part == null) return;
+                var sourceRenderer = part.GetComponent<MeshRenderer>();
+                var go = new GameObject(partName);
+                go.AddComponent<MeshFilter>().sharedMesh = part.GetComponent<MeshFilter>().sharedMesh;
+                go.AddComponent<MeshRenderer>().sharedMaterials = sourceRenderer.sharedMaterials;
+                go.transform.SetParent(bone, false);
+                go.transform.rotation = person.rotation * part.rotation;
+                float parentScale = bone.lossyScale.x;
+                go.transform.localScale = part.lossyScale * (scale / Mathf.Max(parentScale, 1e-5f));
+                // Line the middle of the part up with the bone (plus an offset in the person's own space).
+                go.transform.position = bone.position + person.rotation * (offset + (part.position - sourceRenderer.bounds.center) * scale);
+            }
+            Attach("Helmet", Bone("Head"), new Vector3(0, 0.2f, 0.03f), 1.12f);
+            Attach("Backpack", Bone("Spine2"), new Vector3(0, 0.0f, -0.08f), 1.05f);
         }
 
         /// <summary>Makes a standing person something the player can talk to.</summary>
@@ -752,7 +871,7 @@ namespace TSAGame.EditorTools
 
         static void Nebula(Transform parent, Vector3 position, float size, string materialName, Color tint)
         {
-            var mat = ParticleMaterial(materialName, AssetDatabase.LoadAssetAtPath<Texture2D>($"{TexturesDir}/Nebula.png"), tint * 1.1f, additive: true);
+            var mat = ParticleMaterial(materialName, AssetDatabase.LoadAssetAtPath<Texture2D>($"{TexturesDir}/Nebula.png"), tint * 0.55f, additive: true);
             var quad = Prim(PrimitiveType.Quad, "Nebula", parent, Vector3.zero, Vector3.one * size, mat, collider: false);
             quad.transform.position = position;
             quad.transform.rotation = Quaternion.LookRotation(position - parent.position);
@@ -791,7 +910,15 @@ namespace TSAGame.EditorTools
             var sizeOverLife = ps.sizeOverLifetime;
             sizeOverLife.enabled = true;
             sizeOverLife.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, worldSpace ? 2.6f : 0.35f));
-            go.GetComponent<ParticleSystemRenderer>().sharedMaterial = ModelMats["Fire"];
+            var plumeRenderer = go.GetComponent<ParticleSystemRenderer>();
+            plumeRenderer.sharedMaterial = ModelMats["Fire"];
+            if (!worldSpace)
+            {
+                // Engines in space: long streaks instead of round puffs.
+                plumeRenderer.renderMode = ParticleSystemRenderMode.Stretch;
+                plumeRenderer.lengthScale = 3.2f;
+                plumeRenderer.velocityScale = 0.03f;
+            }
             return ps;
         }
 
@@ -870,6 +997,7 @@ namespace TSAGame.EditorTools
             foreach (var (planetMat, texture) in new[] { ("Planet_X", "PlanetX"), ("Planet_NotEarth", "NotEarth") })
             {
                 var planetMaterial = AssetDatabase.LoadAssetAtPath<Material>($"{MaterialsDir}/{planetMat}.mat");
+                if (!Fresh(planetMaterial)) continue;
                 planetMaterial.SetColor("_BaseColor", Color.white);
                 planetMaterial.SetFloat("_ReceiveShadows", 0f);            // far too big for the shadow map: it leaves a hard line
                 planetMaterial.EnableKeyword("_RECEIVE_SHADOWS_OFF");
@@ -896,7 +1024,7 @@ namespace TSAGame.EditorTools
                 ["Person_Eye"] = Mat("Person_Eye", new Color(0.02f, 0.02f, 0.03f), 0.8f),
                 ["Person_Shoes"] = Mat("Person_Shoes", new Color(0.06f, 0.06f, 0.07f), 0.4f),
                 ["Person_Hair"] = Mat("Person_Hair", new Color(0.12f, 0.08f, 0.06f), 0.4f),
-                ["Person_Visor"] = Mat("Person_Visor", new Color(0.08f, 0.12f, 0.18f), 0.95f, metallic: 0.8f),
+                ["Person_Visor"] = Glass(Mat("Person_Visor", new Color(0.55f, 0.75f, 0.95f, 0.16f), 0.97f, metallic: 0.1f)),
                 ["Person_SuitTrim"] = Mat("Person_SuitTrim", new Color(0.82f, 0.83f, 0.86f), 0.4f),
                 ["Person_Suit"] = Mat("Person_SpaceSuit", new Color(0.9f, 0.9f, 0.88f), 0.35f),
                 ["Person_Orange"] = Mat("Person_Orange", new Color(0.85f, 0.42f, 0.1f)),
@@ -927,8 +1055,25 @@ namespace TSAGame.EditorTools
             return mats;
         }
 
+        /// <summary>Turns a material into see-through glass (its colour's alpha is how solid it looks).</summary>
+        static Material Glass(Material mat)
+        {
+            if (!Fresh(mat)) return mat;
+            mat.SetFloat("_Surface", 1f);
+            mat.SetFloat("_Blend", 0f);
+            mat.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+            mat.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+            mat.SetFloat("_ZWrite", 0f);
+            mat.SetOverrideTag("RenderType", "Transparent");
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.renderQueue = (int)RenderQueue.Transparent;
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
         static Material Textured(Material mat, Texture2D albedo, Texture2D normal, Vector2 tiling, float normalStrength)
         {
+            if (!Fresh(mat)) return mat;
             if (albedo != null)
             {
                 mat.SetTexture("_BaseMap", albedo);
@@ -955,6 +1100,7 @@ namespace TSAGame.EditorTools
                 mat = new Material(shader);
                 AssetDatabase.CreateAsset(mat, path);
             }
+            else if (!OverwriteLook) return mat;
             else mat.shader = shader;
             mat.SetFloat("_Intensity", 0.9f);
             EditorUtility.SetDirty(mat);
@@ -970,6 +1116,7 @@ namespace TSAGame.EditorTools
                 mat = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
                 AssetDatabase.CreateAsset(mat, path);
             }
+            else if (!OverwriteLook) return mat;
             mat.SetTexture("_BaseMap", texture);
             mat.SetColor("_BaseColor", color);
             mat.SetFloat("_Surface", 1f);
@@ -994,6 +1141,7 @@ namespace TSAGame.EditorTools
                 mat = new Material(shader);
                 AssetDatabase.CreateAsset(mat, path);
             }
+            else if (!OverwriteLook) return mat;
             else mat.shader = shader;
             mat.SetVector("_SunDir", directionToSun);
             EditorUtility.SetDirty(mat);

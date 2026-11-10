@@ -222,6 +222,25 @@ namespace TSAGame
 
         public static bool VoicePlaying => Instance != null && Instance.voice.isPlaying;
 
+        static readonly float[] levelBuffer = new float[256];
+        static int levelFrame = -1;
+        static float level;
+
+        /// <summary>How loud the voice is at this moment (0 to about 0.3). Used to move speakers' mouths.</summary>
+        public static float VoiceLevel
+        {
+            get
+            {
+                if (!VoicePlaying) return 0f;
+                if (levelFrame == Time.frameCount) return level;
+                levelFrame = Time.frameCount;
+                Instance.voice.GetOutputData(levelBuffer, 0);
+                float sum = 0f;
+                foreach (float sample in levelBuffer) sum += sample * sample;
+                return level = Mathf.Sqrt(sum / levelBuffer.Length);
+            }
+        }
+
         public static void StopVoice()
         {
             if (Instance != null) Instance.voice.Stop();

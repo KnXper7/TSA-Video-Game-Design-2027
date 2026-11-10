@@ -1,0 +1,92 @@
+{
+ "parts": [
+  {
+   "name": "Eyes",
+   "kind": "eyes",
+   "texture": "brown_eye.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Eyebrows",
+   "kind": "eyebrows",
+   "texture": "eyebrow003.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Eyelashes",
+   "kind": "eyelashes",
+   "texture": "eyelashes02.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Teeth",
+   "kind": "teeth",
+   "texture": "teeth.png",
+   "normal": "",
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "name": "Tongue",
+   "kind": "tongue",
+   "texture": "tongue01_diffuse.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Hair",
+   "kind": "hair",
+   "texture": "short02_diffuse.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Shoes",
+   "kind": "clothes",
+   "texture": "shoes04_diffuse.png",
+   "normal": "shoes04_normal.png",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Body",
+   "kind": "skin",
+   "texture": "young_caucasian_male_special_suit.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  }
+ ]
+}

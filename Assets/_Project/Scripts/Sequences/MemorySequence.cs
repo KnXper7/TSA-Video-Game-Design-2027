@@ -245,7 +245,7 @@ namespace TSAGame
             }
 
             yield return hud.FadeTo(1f, 2f, Color.white);
-            AudioManager.StopLoop("launch", 3f);
+            AudioManager.StopLoop("launch", 1.5f);
             padSmoke.Stop();
             vhs.Disable();
             Dialogue.Stop();
@@ -258,10 +258,14 @@ namespace TSAGame
             cutsceneCamera.backgroundColor = Color.black;
             titleStage.SetActive(true);
             SetShot(titleShot, 50f);
-            AudioManager.StopLoop("ambience", 1.5f);
-            AudioManager.PlayMusic(Sfx.PadMystery, 2f);
-            yield return hud.FadeTo(0f, 1.8f, Color.white);
+            // A beat of complete silence after the roar, then the title lands on the first sound.
+            AudioManager.StopLoop("ambience", 0.5f);
+            AudioManager.StopLoop("music", 0.5f);
+            yield return hud.FadeTo(1f, 0.6f, Color.black);
+            yield return new WaitForSeconds(1.6f);
+            StartCoroutine(hud.FadeTo(0f, 1.2f, Color.black));
             AudioManager.Play(Sfx.Stinger);
+            AudioManager.PlayMusic(Sfx.PadMystery, 3f);
             yield return title.Play();
             for (float t = 0f; t < 4f; t += Time.deltaTime)
             {

@@ -42,15 +42,57 @@ namespace TSAGame.EditorTools
                 Pilot, Sand, Seabed, TankBlue, TankWhite, TankRed, Platform;
         }
 
-        [MenuItem("TSA/Build Intro Scenes", priority = 0)]
-        public static void BuildAll()
+        /// <summary>Each scene and the function that builds it.</summary>
+        static readonly (string scene, System.Action<Mats, VolumeProfile> build)[] Builders =
+        {
+            (SceneFlow.MissionControl, BuildMissionControl), (SceneFlow.Memory, BuildMemory), (SceneFlow.Adrift, BuildAdrift),
+            (SceneFlow.Cockpit, BuildCockpit), (SceneFlow.LandingSite, BuildLandingSite), (SceneFlow.FuelMoon, BuildFuelMoon),
+            (SceneFlow.GateWorld, BuildGateWorld), (SceneFlow.Harvester, BuildHarvester), (SceneFlow.Control, BuildControl),
+        };
+
+        /// <summary>Builds only the scenes that don't exist yet. Never touches a scene you have edited.</summary>
+        [MenuItem("TSA/Build Missing Scenes", priority = 0)]
+        public static void BuildMissing() => Build(s => !File.Exists(ScenePath(s)));
+
+        [MenuItem("TSA/Rebuild Scene (overwrites it)/01 Menu and Opening", priority = 20)] static void Rebuild1() => RebuildOne(SceneFlow.MissionControl);
+        [MenuItem("TSA/Rebuild Scene (overwrites it)/02 Memory", priority = 21)] static void Rebuild2() => RebuildOne(SceneFlow.Memory);
+        [MenuItem("TSA/Rebuild Scene (overwrites it)/03 Adrift", priority = 22)] static void Rebuild3() => RebuildOne(SceneFlow.Adrift);
+        [MenuItem("TSA/Rebuild Scene (overwrites it)/04 Cockpit", priority = 23)] static void Rebuild4() => RebuildOne(SceneFlow.Cockpit);
+        [MenuItem("TSA/Rebuild Scene (overwrites it)/05 Landing Site", priority = 24)] static void Rebuild5() => RebuildOne(SceneFlow.LandingSite);
+        [MenuItem("TSA/Rebuild Scene (overwrites it)/06 Fuel Moon", priority = 25)] static void Rebuild6() => RebuildOne(SceneFlow.FuelMoon);
+        [MenuItem("TSA/Rebuild Scene (overwrites it)/07 Gate World", priority = 26)] static void Rebuild7() => RebuildOne(SceneFlow.GateWorld);
+        [MenuItem("TSA/Rebuild Scene (overwrites it)/08 Harvester", priority = 27)] static void Rebuild8() => RebuildOne(SceneFlow.Harvester);
+        [MenuItem("TSA/Rebuild Scene (overwrites it)/09 Control", priority = 28)] static void Rebuild9() => RebuildOne(SceneFlow.Control);
+
+        static void RebuildOne(string scene)
+        {
+            if (EditorUtility.DisplayDialog("Rebuild scene?",
+                    $"This replaces {scene} with a freshly generated copy. Anything you changed by hand in that scene will be lost.\n\nPrefabs and materials are not touched.",
+                    "Rebuild", "Cancel"))
+                Build(s => s == scene);
+        }
+
+        [MenuItem("TSA/Rebuild All Scenes (overwrites them)", priority = 30)]
+        static void RebuildAllWithWarning()
+        {
+            if (EditorUtility.DisplayDialog("Rebuild every scene?",
+                    "This replaces all nine scenes with freshly generated copies. Anything you changed by hand in the scenes will be lost.\n\nPrefabs and materials are not touched.",
+                    "Rebuild all", "Cancel"))
+                BuildAll();
+        }
+
+        /// <summary>Rebuilds every scene without asking (for scripts).</summary>
+        public static void BuildAll() => Build(_ => true);
+
+        static void Build(System.Func<string, bool> wanted)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
-                Debug.LogWarning("Stop Play mode before building the intro scenes.");
+                Debug.LogWarning("Stop Play mode before building scenes.");
                 return;
             }
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            freshAssets.Clear();
 
             AssetDatabase.Refresh();
             foreach (var dir in new[] { ScenesDir, MaterialsDir, PrefabsDir, SettingsDir }) EnsureFolder(dir);
@@ -61,20 +103,18 @@ namespace TSAGame.EditorTools
             ModelMats = CreateModelMaterials();
             RemoveOldScenes();
 
-            BuildMissionControl(mats, post);
-            BuildMemory(mats, post);
-            BuildAdrift(mats, post);
-            BuildCockpit(mats, post);
-            BuildLandingSite(mats, post);
-            BuildFuelMoon(mats, post);
-            BuildGateWorld(mats, post);
-            BuildHarvester(mats, post);
-            BuildControl(mats, post);
+            int built = 0;
+            foreach (var (scene, build) in Builders)
+            {
+                if (!wanted(scene)) continue;
+                build(mats, post);
+                built++;
+            }
             RegisterScenes();
 
             AssetDatabase.SaveAssets();
             EditorSceneManager.OpenScene(ScenePath(SceneFlow.MissionControl));
-            Debug.Log("Scenes built. Press Play in 01_MissionControl to start from the main menu.");
+            Debug.Log($"{built} scene(s) built. Press Play in 01_MissionControl to start from the main menu.");
         }
 
         [MenuItem("TSA/Open Intro Scene", priority = 1)]
@@ -196,7 +236,13 @@ namespace TSAGame.EditorTools
 
             // Crash site
             var crash = Slot("CrashedRocket", null, new Vector3(0, 1.1f, 7f), new Vector3(0, 25f, 0));
-            Prim(PrimitiveType.Capsule, "Placeholder", crash, Vector3.zero, new Vector3(2.2f, 5f, 2.2f), m.Wreck, Quaternion.Euler(82, 0, 0));
+            var wreck = Model("Rocket", crash, new Vector3(0, -1.2f, -13.9f), Quaternion.Euler(82, 0, 0), 1f, new() { ["Rocket_White"] = m.Wreck });
+            Child(wreck, "Boosters").gameObject.SetActive(false);
+            Child(wreck, "SolarPanels").gameObject.SetActive(false);
+            var wreckCollider = wreck.AddComponent<CapsuleCollider>();
+            wreckCollider.center = new Vector3(0, 15, 0);
+            wreckCollider.radius = 1.9f;
+            wreckCollider.height = 33f;
             Prim(PrimitiveType.Cylinder, "Scorch Mark", null, new Vector3(0, 0.01f, 7f), new Vector3(9, 0.01f, 13), m.Scorch, Quaternion.Euler(0, 25f, 0), collider: false);
             PointLight("Smoulder", crash, crash.position + new Vector3(0, 1.5f, -4f), new Color(1f, 0.45f, 0.15f), 3f, 8f);
 
@@ -236,12 +282,22 @@ namespace TSAGame.EditorTools
             var ruinsZone = TriggerBox("Ruins Trigger", ruins, ruins.position + new Vector3(0, 4, 3), new Vector3(30, 10, 30));
 
             // The ancient gate, behind the ruins
-            Ring("AncientGate", null, new Vector3(-40, 0, 92), 10f, m.Ruin, m.Glyph);
+            // The same ring that swallowed the rocket, but ancient, half buried and switched off.
+            var oldGate = Slot("AncientGate", null, new Vector3(-40, 9.5f, 92), Vector3.zero);
+            Model("Portal", oldGate, Vector3.zero, Quaternion.identity, 1f,
+                new() { ["Portal_Metal"] = m.Ruin, ["Portal_Trim"] = m.Ruin, ["Portal_Glow"] = m.Glyph });
             var gateConsole = Console("GateConsole", null, new Vector3(-40, 0, 78), 0f, m, "Examine the ring", hold: 2f);
 
             // Second rocket and its radio signal
             var oldRocket = Slot("SecondRocket", null, new Vector3(45, 0, 95), Vector3.zero);
-            Prim(PrimitiveType.Capsule, "Placeholder", oldRocket, new Vector3(0, 6, 0), new Vector3(2.6f, 6f, 2.6f), m.OldRocket);
+            var otherShip = Model("Rocket", oldRocket, new Vector3(0, 2.2f, 0), Quaternion.identity, 1f,
+                new() { ["Rocket_White"] = m.OldRocket, ["Rocket_Accent"] = m.Pilot });
+            Child(otherShip, "Boosters").gameObject.SetActive(false);
+            Child(otherShip, "SolarPanels").gameObject.SetActive(false);
+            var shipCollider = oldRocket.gameObject.AddComponent<CapsuleCollider>();
+            shipCollider.center = new Vector3(0, 14, 0);
+            shipCollider.radius = 2.3f;
+            shipCollider.height = 34f;
             var signalMarker = new GameObject("Signal Marker").transform;
             signalMarker.position = oldRocket.position;
             Prim(PrimitiveType.Cylinder, "Beam", signalMarker, new Vector3(0, 40, 0), new Vector3(0.4f, 40f, 0.4f), m.Beacon, collider: false);
@@ -250,7 +306,7 @@ namespace TSAGame.EditorTools
             var pilotShip = oldRocket.gameObject.AddComponent<Interactable>();
             Set(pilotShip, ("prompt", "Board the ship"));
             var pilot = Slot("ColonyPilot", null, new Vector3(41, 0, 89.5f), new Vector3(0, 200f, 0));
-            Prim(PrimitiveType.Capsule, "Placeholder", pilot, new Vector3(0, 1f, 0), new Vector3(0.7f, 1f, 0.7f), m.Pilot, collider: false);
+            PersonInto(pilot, "Pilot", false, Speakers.Pilot, lookAtPlayer: true, tint: new Color(1f, 0.62f, 0.3f));
 
             // Player
             var (player, _) = Player(new Vector3(4.5f, 0, 1.5f), 1.65f, seatedYawLimit: 0f);
@@ -541,7 +597,7 @@ namespace TSAGame.EditorTools
             Wall = Mat("MC_Wall", new Color(0.2f, 0.22f, 0.26f)),
             Desk = Mat("MC_Desk", new Color(0.25f, 0.27f, 0.3f), 0.6f),
             Screen = Mat("MC_MainScreen", Color.white, unlit: true),
-            ScreenBlue = Mat("MC_ScreenGlow", new Color(0.1f, 0.25f, 0.4f), emission: new Color(0.2f, 0.6f, 1f) * 1.5f),
+            ScreenBlue = Mat("MC_ScreenGlow", new Color(0.03f, 0.08f, 0.14f), 0.85f, emission: new Color(0.1f, 0.3f, 0.55f) * 0.45f),
             Operator = Mat("Person_Operator", new Color(0.35f, 0.45f, 0.6f)),
             Director = Mat("Person_FlightDirector", new Color(0.85f, 0.85f, 0.88f)),
             Suit = Mat("Person_Suit", new Color(0.08f, 0.08f, 0.1f)),
@@ -590,7 +646,9 @@ namespace TSAGame.EditorTools
                 mat = new Material(shader);
                 AssetDatabase.CreateAsset(mat, path);
             }
+            else if (!OverwriteLook) return mat;      // already exists: keep whatever it has been tuned to
             else mat.shader = shader;
+            freshAssets.Add(mat);
 
             mat.SetColor("_BaseColor", color);
             if (!unlit)
@@ -617,6 +675,7 @@ namespace TSAGame.EditorTools
                 mat = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
                 AssetDatabase.CreateAsset(mat, path);
             }
+            else if (!OverwriteLook) return mat;
             mat.SetTexture("_BaseMap", AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd"));
             mat.SetColor("_BaseColor", Color.white * 2f);
             // Additive transparency
@@ -683,7 +742,7 @@ namespace TSAGame.EditorTools
             if (File.Exists(IntroSceneBuilder.ScenePath(SceneFlow.MissionControl))) return;
             EditorApplication.delayCall += () =>
             {
-                if (!EditorApplication.isPlayingOrWillChangePlaymode) IntroSceneBuilder.BuildAll();
+                if (!EditorApplication.isPlayingOrWillChangePlaymode) IntroSceneBuilder.BuildMissing();
             };
         }
     }

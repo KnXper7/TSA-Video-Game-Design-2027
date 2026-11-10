@@ -103,6 +103,9 @@ namespace TSAGame
             {
                 float distance = Vector3.Distance(player.transform.position, hatch.position);
                 hud.SetObjective($"Get back to the rocket's hatch  ({distance:0} m)\nFollow the green light");
+                // Everything is heard from inside the helmet: as the air runs low, the breathing gets faster and louder.
+                float panic = 1f - Mathf.Clamp01(oxygen.Normalized * 1.6f);
+                AudioManager.SetLoop("ambience", Mathf.Lerp(0.5f, 0.95f, panic), Mathf.Lerp(1f, 1.7f, panic));
                 if (distance < hatchReach) break;
                 if (failed || distance > maxDistance)
                 {

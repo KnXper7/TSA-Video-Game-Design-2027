@@ -1,0 +1,103 @@
+{
+ "parts": [
+  {
+   "name": "Eyes",
+   "kind": "eyes",
+   "texture": "brown_eye.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Eyebrows",
+   "kind": "eyebrows",
+   "texture": "eyebrow009.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Eyelashes",
+   "kind": "eyelashes",
+   "texture": "eyelashes02.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Teeth",
+   "kind": "teeth",
+   "texture": "teeth.png",
+   "normal": "",
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "name": "Tongue",
+   "kind": "tongue",
+   "texture": "tongue01_diffuse.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Hair",
+   "kind": "hair",
+   "texture": "long01_diffuse.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Clothes1",
+   "kind": "clothes",
+   "texture": "female_casualsuit01_diffuse.png",
+   "normal": "female_casualsuit01_normal.png",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Shoes",
+   "kind": "clothes",
+   "texture": "shoes03_diffuse.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "name": "Body",
+   "kind": "skin",
+   "texture": "middleage_lightskinned_female_diffuse2.png",
+   "normal": "",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  }
+ ]
+}

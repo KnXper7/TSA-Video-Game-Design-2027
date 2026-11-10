@@ -728,7 +728,7 @@ def build_textures():
     save_png("Nebula", np.ones((n, n, 3)), alpha)
 
     # Planets (wrap around a sphere)
-    w, h = 1024, 512
+    w, h = 2048, 1024
     def stretch(a):
         return np.repeat(a, 2, axis=1)
     rough = stretch(fractal(h, 1.8, 21))

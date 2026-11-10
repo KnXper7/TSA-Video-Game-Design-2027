@@ -9,12 +9,24 @@ namespace TSAGame.EditorTools
     /// </summary>
     class ModelImportSettings : AssetPostprocessor
     {
-        public override uint GetVersion() => 3;
+        public override uint GetVersion() => 4;
 
         void OnPreprocessModel()
         {
             if (!assetPath.StartsWith("Assets/_Project/Models/")) return;
             var importer = (ModelImporter)assetImporter;
+            if (assetPath.Contains("/People/"))
+            {
+                // Rigged characters from Tools/blender/build_people.py: keep their smooth normals and skeleton.
+                importer.importNormals = ModelImporterNormals.Import;
+                importer.animationType = ModelImporterAnimationType.Generic;
+                importer.importAnimation = false;
+                importer.importCameras = false;
+                importer.importLights = false;
+                importer.importBlendShapes = false;
+                importer.materialImportMode = ModelImporterMaterialImportMode.None;
+                return;
+            }
             importer.importNormals = ModelImporterNormals.Calculate;
             importer.normalSmoothingAngle = assetPath.Contains("Title") ? 30f : 50f;
             importer.importCameras = false;
@@ -27,6 +39,14 @@ namespace TSAGame.EditorTools
 
         void OnPreprocessTexture()
         {
+            if (assetPath.StartsWith("Assets/_Project/Models/People/Textures/"))
+            {
+                var people = (TextureImporter)assetImporter;
+                if (assetPath.ToLower().Contains("normal")) people.textureType = TextureImporterType.NormalMap;
+                else people.alphaIsTransparency = true;
+                people.maxTextureSize = 2048;
+                return;
+            }
             if (!assetPath.StartsWith("Assets/_Project/Textures/")) return;
             var importer = (TextureImporter)assetImporter;
             if (assetPath.EndsWith("_n.png")) importer.textureType = TextureImporterType.NormalMap;

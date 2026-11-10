@@ -33,12 +33,6 @@ namespace TSAGame
             group = canvas.gameObject.AddComponent<CanvasGroup>();
             var accent = new Color(0.55f, 0.85f, 1f);
 
-            // A soft dark band behind the menu so the text stays readable over bright asteroids.
-            var shade = UIFactory.CreateImage("Shade", canvas.transform, new Color(0f, 0.01f, 0.03f, 0.45f));
-            shade.rectTransform.anchorMin = new Vector2(0, 0); shade.rectTransform.anchorMax = new Vector2(0, 1);
-            shade.rectTransform.pivot = new Vector2(0, 0.5f);
-            shade.rectTransform.sizeDelta = new Vector2(760, 0);
-
             var titleText = UIFactory.CreateText("Title", canvas.transform, title, 78, TextAnchor.UpperLeft, Color.white);
             titleText.font = UIFactory.TitleFont;
             titleText.horizontalOverflow = HorizontalWrapMode.Overflow;

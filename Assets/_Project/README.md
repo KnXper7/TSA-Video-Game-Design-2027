@@ -68,6 +68,18 @@ Trust changes: approaching openly (+15) or watching first (-10), being honest ab
 
 Ending text is in `Scripts/Sequences/Endings.cs`. The endings are title cards for now; swap in cutscenes later.
 
+## People
+
+The characters are real human models made with **MPFB** (MakeHuman for Blender, free and CC0) from recipes in `Tools/blender/build_people.py`: body shape, age, skin, hair and clothes are a few lines each. Change a recipe and run:
+
+```
+/Applications/Blender.app/Contents/MacOS/Blender --background --python Tools/blender/build_people.py
+```
+
+Add `-- --preview` for a line-up picture in `Tools/blender/previews/People.png`. Each character becomes a prefab in `Prefabs/People/` with its materials in `Materials/People/`.
+
+They move without animation clips: the **Person Animator** component on each prefab makes them breathe, shift their weight, look at a target (or at the player), sit and type, and gesture, nod and move their jaw while their **Speaker** has a line of dialogue. Its settings (pose, speaker, look target, liveliness, clothes tint) are per person in the scene. To use real animation clips (for example from Mixamo, which these rigs are named for), remove the component and add an Animator Controller.
+
 ## 3D models
 
 The rocket, portal, grip ball, asteroids, people, launch tower, dead trees, crates and the 3D title letters are made in Blender **from code**: `Tools/blender/build_models.py`. Edit a model's function there and re-run:
@@ -106,6 +118,24 @@ Scripts point at the `MODEL_` parent, so nothing breaks. Trees and salvage crate
 - In the editor, **Esc** frees the mouse; click the Game view to capture it again.
 - The prompt says why **E** does nothing: "(not yet)" for objects the story hasn't reached, "(after the conversation)" while someone is talking.
 
-## Rebuilding
+## Editing safely (nothing gets overwritten behind your back)
 
-**TSA > Build Intro Scenes** regenerates all nine scenes from `Editor/OpeningSceneBuilder.cs` (01-03), `Editor/IntroSceneBuilder.cs` (04-05) and `Editor/StorySceneBuilder.cs` (06-09). It **overwrites** them, so once you start hand-editing scenes or adding models, stop re-running it (or move your changes into the builder).
+Scenes, prefabs and materials are generated once and are then yours to edit.
+
+- **Scenes**: open and change them like any Unity scene. The builder only touches a scene when you ask: **TSA > Build Missing Scenes** creates scenes that don't exist; **TSA > Rebuild Scene (overwrites it)** regenerates one scene after a warning; **TSA > Rebuild All Scenes** regenerates all nine.
+- **Prefabs**: every model has a prefab in `Prefabs/Models/` (a variant of the Blender file). Edit the prefab and every copy in every scene changes. Re-exporting a model from Blender updates its shape without losing your prefab edits.
+- **Materials**: in `Materials/`. A rebuild uses them as they are. **TSA > Reset Look To Defaults** puts them back to the built-in values.
+- **Cutscenes**: the opening is a list of shots on *Cutscene Director* in `01_MissionControl`. Each shot has a camera start and end marker (move them in the scene), a duration, field of view, shake, an optional object to follow, its lines, and events to fire. Reorder, add or delete shots in the Inspector.
+- **Colour and mood**: `Settings/Post_Space.asset` (space scenes), `Settings/MemoryPostProcess.asset` (launch day) and `Settings/IntroPostProcess.asset` (the rest) are Volume profiles: bloom, colour grade, grain and vignette are sliders there.
+- **Sun, planets, debris**: the *Sun Glare* object holds the glow and streak quads; planets have *Atmosphere* and *Rings* children with their own materials; *Debris Field* objects have count, size and a clear lane.
+- The scene layouts themselves are code in `Editor/OpeningSceneBuilder.cs` (01-03), `Editor/IntroSceneBuilder.cs` (04-05), `Editor/StorySceneBuilder.cs` (06-09) and `Editor/LookBuilder.cs` (lighting and look), for when a scene should be regenerated differently.
+
+## Direction notes (why the intro is cut the way it is)
+
+Taken from how space films and trailers build their feeling:
+
+- **Open wide and slow, then tighten.** The menu shot and fly-by are long and calm; shots get shorter and shakier as the portal takes the rocket.
+- **Sound from inside the suit.** In the spacewalk you hear breathing, the line and thuds through contact, not explosions. Breathing speeds up as the air runs out.
+- **Handheld in small spaces.** The cabin and launch shots shake; the wide space shots stay still.
+- **A beat of silence before the title.** The launch roar cuts to black and nothing, then the title lands with the first sound.
+- **Cut to black before the answer.** The opening ends mid-sentence, on the question, not the explanation.

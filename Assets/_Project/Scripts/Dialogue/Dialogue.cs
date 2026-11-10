@@ -50,6 +50,9 @@ namespace TSAGame
 
         public static bool IsPlaying { get; private set; }
 
+        /// <summary>Who is speaking right now (the label above the subtitle). People in the scene use it to know when to talk.</summary>
+        public static string CurrentSpeaker { get; private set; }
+
         /// <summary>Text speed. 1 is normal; higher is faster (a settings menu or a test run can raise it).</summary>
         public static float SpeedMultiplier { get; set; } = 1f;
 
@@ -82,6 +85,7 @@ namespace TSAGame
             if (hud == null || line == null || string.IsNullOrEmpty(line.text)) yield break;
 
             IsPlaying = true;
+            CurrentSpeaker = line.speaker;
 
             // Voice: when a recording exists, the subtitle types out over most of its length.
             // Fast-forwarded dialogue (SpeedMultiplier > 1) skips voice.
