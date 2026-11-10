@@ -40,6 +40,7 @@ namespace TSAGame
 
             player.CanMove = false;
             interactor.enabled = false;
+            yield return hud.ShowTitle("LEVEL 3", "The Cockpit", 2f);
             alarms.Trigger();
             console.Interacted += _ => puzzle.Open();
 

@@ -12,10 +12,10 @@ namespace TSAGame
     {
         static readonly (Stat stat, string blurb)[] Rows =
         {
-            (Stat.Engineering, "Machines and power. Opens technical shortcuts."),
-            (Stat.Navigation, "Maps, glyphs and gates. Reveals hidden routes."),
-            (Stat.Diplomacy, "Persuasion. Unlocks dialogue options."),
-            (Stat.Survival, "Oxygen lasts longer. Endure hazards."),
+            (Stat.Engineering, "At 3: pull yourself in 35% faster, extra power cell, see valve orders."),
+            (Stat.Navigation, "At 3: throw the grip ball 30% further, salvage marked, first gate ring free."),
+            (Stat.Diplomacy, "At 3: talk people into helping you. At 4: change the pilot's mind."),
+            (Stat.Survival, "Each point above 2: suit air drains 10% slower."),
         };
 
         Canvas canvas;
@@ -36,7 +36,7 @@ namespace TSAGame
         void Update()
         {
             var state = GameState.Instance;
-            reminder.text = !IsOpen && state.UnspentPoints > 0 ? $"[TAB] {state.UnspentPoints} stat points to spend" : "";
+            reminder.text = !IsOpen && state.UnspentPoints > 0 ? $"[C] {state.UnspentPoints} stat points to spend" : "";
 
             if (!GameInput.Stats.WasPressedThisFrame()) return;
             if (IsOpen) Close();
@@ -44,8 +44,9 @@ namespace TSAGame
             else if (!InputLock.IsLocked && !Dialogue.IsPlaying) Open();
         }
 
-        void Open()
+        public void Open()
         {
+            if (IsOpen) return;
             canvas.gameObject.SetActive(true);
             AudioManager.Play(Sfx.Interact, 0.5f);
             InputLock.Push(this);
@@ -110,7 +111,7 @@ namespace TSAGame
                 rows.Add((value, plus));
             }
 
-            var close = UIFactory.CreateText("Close", panel.transform, "[TAB] close", 22, TextAnchor.LowerRight, new Color(1, 1, 1, 0.6f));
+            var close = UIFactory.CreateText("Close", panel.transform, "[C] close", 22, TextAnchor.LowerRight, new Color(1, 1, 1, 0.6f));
             UIFactory.Place(close.rectTransform, new Vector2(1, 0), new Vector2(300, 40), new Vector2(-40, 24));
         }
     }

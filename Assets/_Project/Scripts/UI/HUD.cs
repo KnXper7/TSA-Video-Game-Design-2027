@@ -220,7 +220,7 @@ namespace TSAGame
         {
             skipHint.gameObject.SetActive(progress >= 0f);
             if (progress >= 0f)
-                skipHint.text = progress > 0f ? $"Skipping... {Mathf.RoundToInt(progress * 100)}%" : "Hold ESC to skip";
+                skipHint.text = progress > 0f ? $"Skipping... {Mathf.RoundToInt(progress * 100)}%" : "Hold ENTER to skip";
         }
 
         // ---------- Dialogue choices ----------
@@ -339,7 +339,7 @@ namespace TSAGame
             UIFactory.Place(titleSubText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1600, 60), new Vector2(0, -60));
 
             // Skip hint, bottom right
-            skipHint = UIFactory.CreateText("Skip Hint", root, "Hold ESC to skip", 22, TextAnchor.LowerRight, new Color(1, 1, 1, 0.6f));
+            skipHint = UIFactory.CreateText("Skip Hint", root, "Hold ENTER to skip", 22, TextAnchor.LowerRight, new Color(1, 1, 1, 0.6f));
             UIFactory.Place(skipHint.rectTransform, new Vector2(1, 0), new Vector2(500, 40), new Vector2(-30, 20));
 
             // Fader on top of everything

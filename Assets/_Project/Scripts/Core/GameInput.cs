@@ -47,6 +47,7 @@ namespace TSAGame
 
             Skip = new InputAction("Skip", InputActionType.Button, "<Keyboard>/escape");
             Skip.AddBinding("<Gamepad>/start");
+            Skip.AddBinding("<Keyboard>/enter");        // Esc is taken by the browser in a web build
 
             Choice1 = new InputAction("Choice1", InputActionType.Button, "<Keyboard>/1");
             Choice2 = new InputAction("Choice2", InputActionType.Button, "<Keyboard>/2");
@@ -55,6 +56,7 @@ namespace TSAGame
 
             Stats = new InputAction("Stats", InputActionType.Button, "<Keyboard>/tab");
             Stats.AddBinding("<Gamepad>/select");
+            Stats.AddBinding("<Keyboard>/c");            // Tab can move focus off the game in a browser
 
             Throw = new InputAction("Throw", InputActionType.Button, "<Mouse>/leftButton");
             Throw.AddBinding("<Gamepad>/rightTrigger");

@@ -28,7 +28,8 @@ namespace TSAGame
         float yaw;
         float startYaw;
         float verticalVelocity;
-        float stride;
+        float stride, bob, pivotHeight = float.NaN;
+        Vector3 smoothed;
         int settleFrames = 2;
 
         const float MaxMouseDeltaPerFrame = 120f;
@@ -95,6 +96,20 @@ namespace TSAGame
 
                 if (controller.isGrounded && GameInput.Jump.WasPressedThisFrame())
                     verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            }
+
+            // Ease in and out of a walk, so starting and stopping don't feel like a switch.
+            smoothed = Vector3.MoveTowards(smoothed, horizontal, (horizontal.sqrMagnitude > 0.01f ? 28f : 36f) * Time.deltaTime);
+            horizontal = smoothed;
+            // A small bob of the head in step with the stride.
+            if (cameraPivot != null)
+            {
+                if (float.IsNaN(pivotHeight)) pivotHeight = cameraPivot.localPosition.y;
+                float moving = Mathf.Clamp01(horizontal.magnitude / walkSpeed) * (controller.isGrounded ? 1f : 0f);
+                bob = Mathf.Lerp(bob, moving, 1f - Mathf.Exp(-8f * Time.deltaTime));
+                var local = cameraPivot.localPosition;
+                local.y = pivotHeight + Mathf.Sin(stride / 2.2f * Mathf.PI * 2f) * 0.035f * bob;
+                cameraPivot.localPosition = local;
             }
 
             if (controller.isGrounded && verticalVelocity < 0f) verticalVelocity = -2f;

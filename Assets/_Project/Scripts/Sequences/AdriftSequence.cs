@@ -62,6 +62,7 @@ namespace TSAGame
             }
 
             // Waking up
+            if (!retry) yield return hud.ShowTitle("LEVEL 2", "Adrift", 2f);
             player.Tumble = 14f;
             player.Body.linearVelocity = new Vector3(-0.35f, 0.1f, -0.45f);
             StartCoroutine(hud.FadeTo(0f, retry ? 2f : 6f, Color.black));
@@ -77,6 +78,14 @@ namespace TSAGame
                     (Speakers.ShipAI, "Your suit has no thrusters. You have four minutes of air."),
                     (Speakers.Commander, "No thrusters. Nothing to push against."),
                     (Speakers.Engineer, "Stuck in zero gravity, that ball is the difference between drifting forever and getting home."));
+                // What you told the engineer on launch day comes back to you now.
+                if (state.HasFlag("memory.promise.0")) yield return Dialogue.Say(Speakers.Commander, "I promised I'd come back. So move.");
+                else if (state.HasFlag("memory.promise.2")) yield return Dialogue.Say(Speakers.Commander, "Keep the lights on. I'm not done yet.");
+                if (state.HasFlag("memory.spare_air"))
+                {
+                    oxygen.AddCapacity(0.3f);
+                    hud.ShowToast("Spare canister from the quartermaster: +30% air");
+                }
             }
             player.CanLook = true;
             player.Tumble = 0f;
@@ -87,13 +96,11 @@ namespace TSAGame
             yield return new WaitUntil(() => !Dialogue.IsPlaying && !InputLock.IsLocked && GameInput.Interact.WasPressedThisFrame());
             ball.enabled = true;
             ball.TakeOut();
-            hud.ShowToast("Left mouse: throw at a rock");
-            hud.ShowToast("When it pulses, hold left mouse to pull yourself in");
-            hud.ShowToast("R: call the ball back");
-            hud.ShowToast("Space: push off a rock you are touching");
-
-            oxygen.Draining = true;
+            // The controls stay on screen for the whole spacewalk, and the air only starts running down once the
+            // first throw has gripped, so nobody loses air while reading.
+            const string controls = "LEFT MOUSE  throw at a rock   •   when it pulses, HOLD LEFT MOUSE to pull in\nR  call the ball back   •   SPACE  push off a rock   •   C  stats";
             hud.ShowOxygen(true);
+            ball.Gripped += () => oxygen.Draining = true;
             bool failed = false, gripped = false, arrived = false, saidGrip = false, saidArrive = false;
             oxygen.Depleted += () => failed = true;
             ball.Gripped += () => gripped = true;
@@ -102,7 +109,7 @@ namespace TSAGame
             while (true)
             {
                 float distance = Vector3.Distance(player.transform.position, hatch.position);
-                hud.SetObjective($"Get back to the rocket's hatch  ({distance:0} m)\nFollow the green light");
+                hud.SetObjective($"Get back to the rocket's hatch  ({distance:0} m)\n{controls}");
                 // Everything is heard from inside the helmet: as the air runs low, the breathing gets faster and louder.
                 float panic = 1f - Mathf.Clamp01(oxygen.Normalized * 1.6f);
                 AudioManager.SetLoop("ambience", Mathf.Lerp(0.5f, 0.95f, panic), Mathf.Lerp(1f, 1.7f, panic));
@@ -163,8 +170,13 @@ namespace TSAGame
             const float duration = 9f;
             var basePosition = impactShot.position;
             bool warned = false, braced = false;
+            float skipHeld = 0f;
             for (float t = 0f; t < duration; t += Time.deltaTime)
             {
+                // Hold Enter to jump to the impact.
+                skipHeld = GameInput.Skip.IsPressed() ? skipHeld + Time.deltaTime : 0f;
+                hud.SetSkipHint(skipHeld / 0.8f);
+                if (skipHeld >= 0.8f) break;
                 float k = t / duration;
                 if (!warned && t > 2.5f)
                 {
@@ -185,6 +197,7 @@ namespace TSAGame
             }
 
             // The hit
+            hud.SetSkipHint(-1f);
             Dialogue.Stop();
             AudioManager.Play(Sfx.Explosion);
             AudioManager.StopLoop("engine", 0.1f);
@@ -216,7 +229,7 @@ namespace TSAGame
             hud.SetPrompt(null);
             yield return Dialogue.Say(Speakers.ShipAI, "Commander? Commander, respond.");
             yield return hud.FadeTo(1f, 2f, Color.black);
-            yield return hud.ShowTitle("LOST TO THE DARK", "Trying again", 2f, new Color(1f, 0.4f, 0.35f));
+            yield return hud.ShowTitle("OUT OF AIR", "Trying again", 2f, new Color(1f, 0.4f, 0.35f));
             SceneFlow.Reload(0.1f);
         }
     }

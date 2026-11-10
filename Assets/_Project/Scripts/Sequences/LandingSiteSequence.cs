@@ -55,7 +55,7 @@ namespace TSAGame
             yield return Dialogue.Play(
                 (Speakers.ShipAI, "Hull integrity forty percent. We're on the ground. Mostly in one piece."),
                 (Speakers.Commander, "Mostly?"),
-                (Speakers.ShipAI, "Your suit has limited oxygen. I suggest finding out if this air will kill you."));
+                (Speakers.ShipAI, "Your suit has limited oxygen. I suggest finding out if this air is safe to breathe."));
 
             // 1. Air
             player.CanMove = true;

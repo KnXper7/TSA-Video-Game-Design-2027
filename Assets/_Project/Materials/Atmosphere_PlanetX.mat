@@ -25,10 +25,10 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Intensity: 1.6
-    - _Power: 3
+    - _Intensity: 47.2
+    - _Power: 3.18
     m_Colors:
-    - _Color: {r: 1, g: 0.7726887, b: 0.6273585, a: 1}
+    - _Color: {r: 0.764151, g: 0.63929456, b: 0.38568, a: 1}
     - _SunDir: {r: -0.51833934, g: 0.20791169, b: 0.8295162, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

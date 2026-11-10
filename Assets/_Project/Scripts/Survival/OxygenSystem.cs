@@ -35,6 +35,13 @@ namespace TSAGame
             }
         }
 
+        /// <summary>A bigger tank: adds this fraction of capacity and fills it (a spare canister).</summary>
+        public void AddCapacity(float fraction)
+        {
+            capacity *= 1f + fraction;
+            Current = capacity;
+        }
+
         public void Refill(float amount)
         {
             Current = Mathf.Min(capacity, Current + amount);
@@ -43,7 +50,8 @@ namespace TSAGame
 
         void Update()
         {
-            if (!Draining || depleted) return;
+            // Air does not run down while a menu (stats, a choice) is open.
+            if (!Draining || depleted || InputLock.IsLocked) return;
 
             float before = Normalized;
             Current = Mathf.Max(0f, Current - DrainRate * Time.deltaTime);

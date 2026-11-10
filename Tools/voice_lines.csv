@@ -6,6 +6,8 @@ file,speaker,text,source
 d19c400b.wav,SHIP AI,Your suit has no thrusters. You have four minutes of air.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 102cd80d.wav,COMMANDER,No thrusters. Nothing to push against.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 739f7561.wav,ENGINEER,"Stuck in zero gravity, that ball is the difference between drifting forever and getting home.",Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+d7f6ed1b.wav,COMMANDER,I promised I'd come back. So move.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+419fb525.wav,COMMANDER,Keep the lights on. I'm not done yet.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 00bf858f.wav,SHIP AI,It's holding. Now reel yourself in.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 c7d19850.wav,SHIP AI,Good. Now the next one. Work your way to the hull.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 d346dcf4.wav,COMMANDER,Got it. I've got the rail.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
@@ -102,7 +104,7 @@ c28c76d5.wav,SHIP AI,Understood. I will not mention it.,Assets/_Project/Scripts/
 2e0e3c7b.wav,SHIP AI,Wrong address. The records in this station may hold the missing symbol.,Assets/_Project/Scripts/Sequences/HarvesterSequence.cs
 f6e8c188.wav,SHIP AI,Hull integrity forty percent. We're on the ground. Mostly in one piece.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
 2827d5b0.wav,COMMANDER,Mostly?,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
-768196dd.wav,SHIP AI,Your suit has limited oxygen. I suggest finding out if this air will kill you.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
+cbff7a85.wav,SHIP AI,Your suit has limited oxygen. I suggest finding out if this air is safe to breathe.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
 fbb34d5e.wav,SHIP AI,Nitrogen seventy-eight percent. Oxygen twenty-one. Commander... it's the same air as Earth.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
 61615c2e.wav,COMMANDER,That's not possible.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
 490dc284.wav,SHIP AI,And yet you may remove your helmet.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
@@ -137,12 +139,19 @@ c29c69d9.wav,COLONY PILOT,"My ship can still fly that far. My pump, your refiner
 352d9839.wav,ENGINEER,"Three things still aren't aboard: the water ration, the seed vault and the guidance core.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
 d48fabca.wav,COMMANDER,The three things I can't fly without.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 9d8183fd.wav,ENGINEER,Then stop standing here. Bring them to the cargo lift and I'll get them stowed.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+e816c6ca.wav,ENGINEER,One more thing. Flight wants your training record signed off. Pick what you're best at.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 556c3b2e.wav,QUARTERMASTER,That's the last of Reservoir Three. Forty litres.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 5a9cd863.wav,QUARTERMASTER,Used to be you couldn't see the far shore of this lake.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 b48f14b2.wav,COMMANDER,I learned to swim here.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 6e785f6e.wav,QUARTERMASTER,"Then bring some back with you, Commander.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
 aa8e54d2.wav,COMMANDER,The guidance core. Every chart we have of a place no one has ever been.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 d4d58c5c.wav,COMMANDER,Fourteen months of flying on somebody's best guess.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+e4e2954b.wav,COMMANDER,That shelf behind you. Is that a spare suit canister?,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+77e308a5.wav,QUARTERMASTER,"It's the last one, and it's on my inventory, not yours.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
+fc822597.wav,QUARTERMASTER,...Take it. And don't make me regret the paperwork.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+46dff707.wav,QUARTERMASTER,"Nice try, Commander. The answer's no.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
+c0a3d8b2.wav,QUARTERMASTER,You don't outrank a locked cabinet. No.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+060bab6c.wav,QUARTERMASTER,Appreciate that. Fly safe.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 935f8df8.wav,BOTANIST,Commander. I was afraid you'd leave without it.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 e8dcaf90.wav,BOTANIST,"Every crop we still have, in one case. Wheat, rice, beans. Forty thousand seeds.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
 8b0db9c2.wav,BOTANIST,Nothing grows here anymore. Tell me honestly. Do you think Planet X has soil?,Assets/_Project/Scripts/Sequences/MemorySequence.cs

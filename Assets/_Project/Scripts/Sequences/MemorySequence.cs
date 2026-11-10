@@ -65,7 +65,7 @@ namespace TSAGame
             // Black. A voice calling him, closer each time. Then his eyes open.
             player.CanLook = false;
             yield return new WaitForSeconds(1f);
-            yield return hud.ShowTitle("FOURTEEN MONTHS EARLIER", "Earth. Launch day.", 2.5f);
+            yield return hud.ShowTitle("FOURTEEN MONTHS EARLIER", "Level 1  •  Earth. Launch day.", 2.5f);
             yield return new WaitForSeconds(0.8f);
             yield return Dialogue.Say(Speakers.Engineer, "Commander.");
             yield return new WaitForSeconds(0.8f);
@@ -101,6 +101,17 @@ namespace TSAGame
                 (Speakers.Engineer, "Then stop standing here. Bring them to the cargo lift and I'll get them stowed."));
             state.AddXp(10, "Briefed");
 
+            // Character creation: two points to put where you like, before anything depends on them.
+            yield return Dialogue.Say(Speakers.Engineer, "One more thing. Flight wants your training record signed off. Pick what you're best at.");
+            state.GrantPoints(2);
+            var stats = hud.GetComponent<StatsPanel>();
+            if (stats != null)
+            {
+                stats.Open();
+                yield return new WaitUntil(() => !stats.IsOpen);
+            }
+            hud.ShowToast("Press C any time to see your stats");
+
             // The last three pieces of cargo, in any order
             Story.Unlock(pump, botanist, guidanceCore);
             pumpBeacon.SetActive(true);
@@ -126,6 +137,7 @@ namespace TSAGame
                         (Speakers.Commander, "I learned to swim here."),
                         (Speakers.Quartermaster, "Then bring some back with you, Commander."));
                     state.AddXp(15, "Water ration");
+                    yield return SpareAir();
                 }
                 else if (used == botanist)
                 {
@@ -162,6 +174,35 @@ namespace TSAGame
             yield return Launch();
         }
 
+        /// <summary>A social puzzle with a stat check: the quartermaster has one spare air canister he isn't meant to give out.</summary>
+        IEnumerator SpareAir()
+        {
+            var state = GameState.Instance;
+            bool persuasive = state.Check(Stat.Diplomacy, 3);
+            yield return Dialogue.Say(Speakers.Commander, "That shelf behind you. Is that a spare suit canister?");
+            yield return Dialogue.Say(Speakers.Quartermaster, "It's the last one, and it's on my inventory, not yours.");
+            int choice = 0;
+            yield return Dialogue.Choose(new[]
+            {
+                persuasive ? "[DIPLOMACY 3] If I don't come back, your inventory won't matter to anyone." : "[DIPLOMACY 3 needed] Talk him round",
+                "Order him to hand it over.",
+                "Leave it. He's right.",
+            }, c => choice = c);
+            if (choice == 0 && persuasive)
+            {
+                state.SetFlag("memory.spare_air");
+                state.AddXp(25, "Talked him round");
+                HUD.Instance.ShowToast("Received: spare air canister (+30% suit air)");
+                yield return Dialogue.Say(Speakers.Quartermaster, "...Take it. And don't make me regret the paperwork.");
+            }
+            else if (choice == 0)
+                yield return Dialogue.Say(Speakers.Quartermaster, "Nice try, Commander. The answer's no.");
+            else if (choice == 1)
+                yield return Dialogue.Say(Speakers.Quartermaster, "You don't outrank a locked cabinet. No.");
+            else
+                yield return Dialogue.Say(Speakers.Quartermaster, "Appreciate that. Fly safe.");
+        }
+
         IEnumerator Seeds()
         {
             var state = GameState.Instance;
@@ -177,6 +218,10 @@ namespace TSAGame
                 "If it doesn't, I'll find somewhere that does.",
             }, c => choice = c);
             state.SetFlag("memory.seeds." + choice);
+            // What you say shapes who you are: each answer trains a different stat.
+            if (choice == 0) { state.Raise(Stat.Diplomacy); HUD.Instance.ShowToast("Honesty: DIPLOMACY +1"); }
+            else if (choice == 2) { state.Raise(Stat.Navigation); HUD.Instance.ShowToast("Resolve: NAVIGATION +1"); }
+            else HUD.Instance.ShowToast("She will hold you to that");
             yield return Dialogue.Say(Speakers.Botanist, choice switch
             {
                 0 => "The truth. That's all any of us can ask for now.",
@@ -208,6 +253,9 @@ namespace TSAGame
             int choice = 0;
             yield return Dialogue.Choose(new[] { "I promise.", "I'll try.", "Keep the lights on for me." }, c => choice = c);
             state.SetFlag("memory.promise." + choice);
+            if (choice == 0) { state.Raise(Stat.Survival); HUD.Instance.ShowToast("A promise to keep: SURVIVAL +1"); }
+            else if (choice == 2) { state.Raise(Stat.Engineering); HUD.Instance.ShowToast("Lights on: ENGINEERING +1"); }
+            else state.AddXp(20, "No false promises");
             yield return Dialogue.Say(Speakers.Engineer, choice switch
             {
                 0 => "I'm holding you to that.",

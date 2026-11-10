@@ -103,6 +103,12 @@ namespace TSAGame
             }
         }
 
+        /// <summary>Gives stat points to spend (character creation, rewards).</summary>
+        public void GrantPoints(int points) => unspentPoints += points;
+
+        /// <summary>Raises a stat directly, as a consequence of a choice.</summary>
+        public void Raise(Stat stat, int amount = 1) => Set(stat, Get(stat) + amount);
+
         public void ChangeTrust(int delta)
         {
             trust = Mathf.Clamp(trust + delta, 0, 100);

@@ -78,6 +78,8 @@ From the event guide (`HS - Video Game Design`): the game must be **playable in 
 - `Models/People/Astronaut.fbx` and `AstronautGlove.fbx`: made with Higgsfield (Meshy text-to-3D), converted by `Tools/blender/import_generated.py`.
 - `Models/People/*` (other characters): MakeHuman / MPFB, CC0.
 - Fonts: Michroma and Rajdhani, SIL Open Font License.
+- `Docs/Targets/*`: realistic target images (Higgsfield GPT Image) and `glove_throw_seedance.mp4` (Higgsfield Seedance), used only as references for art and animation.
+- `Textures/PBR/*`: surface textures from ambientCG, CC0.
 - Voices: macOS text-to-speech placeholders (replace with team recordings).
 - Code and scene building were written with an AI assistant (Claude).
 
