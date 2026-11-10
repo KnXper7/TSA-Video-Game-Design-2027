@@ -24,6 +24,11 @@ namespace TSAGame
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
+        // The scene you press Play in doesn't always report "loaded" in the editor, and the cursor can still be
+        // captured from the last Play session. Set it correctly once the first scene is up.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        static void ApplyOnStart() => ApplyCursor();
+
         static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             owners.Clear();

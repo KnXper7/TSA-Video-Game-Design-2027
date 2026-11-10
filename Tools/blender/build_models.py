@@ -35,6 +35,9 @@ COLORS = {
     "Person_Eye": (0.03, 0.03, 0.04), "Person_Shoes": (0.1, 0.1, 0.1), "Person_Hair": (0.15, 0.1, 0.07), "Person_Visor": (0.5, 0.8, 1.0), "Person_SuitTrim": (0.85, 0.85, 0.88),
     "Tower_Steel": (0.5, 0.2, 0.15), "Tower_Light": (1.0, 0.95, 0.7), "Tower_Concrete": (0.5, 0.5, 0.48), "Tower_Scorch": (0.1, 0.09, 0.08),
     "Tree_Dead": (0.3, 0.24, 0.18), "Crate_Body": (0.8, 0.8, 0.78), "Crate_Trim": (0.2, 0.2, 0.22), "Crate_Light": (0.3, 0.9, 1.0),
+    "Tree_Bark": (0.32, 0.25, 0.2), "Tree_Leaves": (0.2, 0.45, 0.15), "Desk_Top": (0.12, 0.13, 0.15), "Desk_Frame": (0.3, 0.32, 0.36),
+    "Desk_Keys": (0.05, 0.05, 0.06), "Desk_Light": (0.3, 0.8, 1.0), "Monitor_Bezel": (0.04, 0.04, 0.05), "Monitor_Screen": (0.1, 0.4, 0.7),
+    "Glove_Suit": (0.88, 0.88, 0.86), "Glove_Grip": (0.12, 0.12, 0.14), "Chair_Fabric": (0.1, 0.12, 0.16), "Chair_Frame": (0.25, 0.26, 0.28),
     "Title_Face": (0.95, 0.95, 1.0), "Title_Side": (0.3, 0.6, 0.9),
 }
 PREVIEW = "--preview" in sys.argv
@@ -603,6 +606,131 @@ def build_crate():
 
 
 # ----------------------------------------------------------------------------------------------
+# Living trees: a branching trunk with bark, and leaves as flat cards that carry a leaf-cluster picture.
+# ----------------------------------------------------------------------------------------------
+
+def build_tree(name, seed, height=9.0, spread=1.0):
+    rng = random.Random(seed)
+    tree = Mesh(name)
+    tips = []
+
+    def branch(base, direction, length, radius, depth):
+        tip = base + direction * length
+        tree.cyl(base, tip, radius, radius * 0.62, "Tree_Bark", 9 if depth >= 2 else 6)
+        if depth == 0:
+            tips.append((tip, length))
+            return
+        for _ in range(rng.randint(3, 4) if depth >= 2 else rng.randint(2, 3)):
+            outward = Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(0.15, 0.7))).normalized()
+            new_dir = (direction * 0.5 + outward * 0.85 * spread).normalized()
+            start = base + direction * length * rng.uniform(0.6, 1.0)
+            branch(start, new_dir, length * rng.uniform(0.55, 0.72), radius * 0.55, depth - 1)
+            if depth == 1:
+                tips.append((start + new_dir * length * 0.3, length))
+
+    lean = Vector((rng.uniform(-0.08, 0.08), rng.uniform(-0.08, 0.08), 1)).normalized()
+    branch(Vector((0, 0, -0.3)), lean, height * 0.42, 0.3 * height / 9.0, 3)
+
+    # Leaf cards: a few crossed squares around every branch tip.
+    uv = tree.uv
+    leaf = tree.mi("Tree_Leaves")
+    leaf_start = len(tree.bm.faces)
+    for tip, length in tips:
+        for _ in range(3):
+            size = rng.uniform(1.5, 2.4) * height / 9.0
+            centre = tip + Vector((rng.uniform(-0.5, 0.5), rng.uniform(-0.5, 0.5), rng.uniform(-0.2, 0.5)))
+            right = Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-0.4, 0.4))).normalized()
+            up = right.cross(Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-1, 1)))).normalized()
+            corners = [centre + (right * sx + up * sy) * size / 2 for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+            face = tree.bm.faces.new([tree.bm.verts.new(c) for c in corners])
+            face.material_index = leaf
+            for loop, coords in zip(face.loops, ((0, 0), (1, 0), (1, 1), (0, 1))):
+                loop[uv].uv = coords
+    tree.bm.faces.ensure_lookup_table()
+    leaf_faces = {f.index for f in tree.bm.faces[leaf_start:]}
+    crown = sum((t for t, _ in tips), Vector()) / len(tips)
+
+    ob = tree.build()
+    # Leaves are lit as if the crown were one soft ball, which hides the flat cards.
+    me = ob.data
+    normals = [Vector(n.vector) for n in me.corner_normals]
+    for poly in me.polygons:
+        if poly.index in leaf_faces:
+            for li in poly.loop_indices:
+                v = me.vertices[me.loops[li].vertex_index].co
+                normals[li] = (v - crown + Vector((0, 0, 1.5))).normalized()
+    me.normals_split_custom_set([tuple(n) for n in normals])
+    export(name, [ob])
+
+
+def build_glove():
+    """The player's own suited hand, seen in first person, shaped to hold the grip ball (ball centre 6 cm above the palm)."""
+    g = Mesh("Glove")
+    W, D = "Glove_Suit", "Glove_Grip"
+    g.cyl((0.01, 0.5, -0.12), (0, 0.085, -0.02), 0.06, 0.047, W, 14)          # forearm, running back out of view
+    g.lathe([(0.052, 0.0), (0.06, 0.01), (0.06, 0.035), (0.052, 0.045)], D, 16, T(0, 0.11, -0.028) @ Rx(-102), closed=False, cap_start=False, cap_end=False)
+    g.sphere((0, 0.01, -0.012), 0.05, W, 2, (1.0, 1.25, 0.5))                  # palm
+    for k, x in enumerate((-0.04, -0.013, 0.014, 0.04)):
+        reach = 1.0 - abs(k - 1.5) * 0.08
+        pts = [Vector((x, -0.035, -0.005)), Vector((x * 1.1, -0.078 * reach, 0.03)), Vector((x * 1.1, -0.088 * reach, 0.085)), Vector((x, -0.06 * reach, 0.128))]
+        for a, b in zip(pts, pts[1:]):
+            g.cyl(a, b, 0.0125, 0.0115, W, 8)
+            g.sphere(b, 0.0125, D, 1)
+    thumb = [Vector((0.05, 0.02, -0.005)), Vector((0.082, -0.005, 0.04)), Vector((0.075, -0.025, 0.095))]
+    for a, b in zip(thumb, thumb[1:]):
+        g.cyl(a, b, 0.015, 0.013, W, 8)
+        g.sphere(b, 0.014, D, 1)
+    export("Glove", [g.build()], view=(0.8, -1.2, 0.8))
+
+
+# ----------------------------------------------------------------------------------------------
+# Mission control furniture
+# ----------------------------------------------------------------------------------------------
+
+def build_furniture():
+    desk = Mesh("Desk")
+    desk.box((7.0, 1.25, 0.05), T(0, 0, 0.75), "Desk_Top")
+    desk.box((7.0, 0.04, 0.5), T(0, -0.6, 0.48), "Desk_Frame")                 # front panel (faces the room's screen)
+    desk.box((6.9, 0.3, 0.04), T(0, -0.42, 0.98), "Desk_Top")                  # raised shelf the monitors stand on
+    desk.box((6.9, 0.03, 0.2), T(0, -0.56, 0.87), "Desk_Frame")
+    for x in (-3.46, -1.15, 1.15, 3.46):
+        desk.box((0.06, 1.2, 0.74), T(x, 0, 0.37), "Desk_Frame")
+    for x in (-2.2, 0.0, 2.2):                                                # keyboard, mouse and a mug per seat
+        desk.box((0.46, 0.16, 0.02), T(x, 0.42, 0.785), "Desk_Keys")
+        desk.box((0.07, 0.11, 0.025), T(x + 0.38, 0.44, 0.788), "Desk_Keys")
+        desk.cyl((x - 0.45, 0.3, 0.775), (x - 0.45, 0.3, 0.87), 0.04, 0.04, "Desk_Frame", 10)
+    desk.box((6.8, 0.012, 0.012), T(0, -0.585, 0.71), "Desk_Light")           # thin light strip under the lip
+    export("Desk", [desk.build()])
+
+    monitor = Mesh("Monitor")
+    monitor.box((1.44, 0.05, 0.84), T(0, 0, 0.5), "Monitor_Bezel")
+    monitor.box((0.12, 0.06, 0.2), T(0, -0.04, 0.1), "Monitor_Bezel")
+    monitor.box((0.5, 0.26, 0.02), T(0, -0.03, 0.01), "Monitor_Bezel")
+    screen = Mesh("Screen")
+    v = [screen.bm.verts.new(c) for c in ((-0.68, 0.027, 0.12), (0.68, 0.027, 0.12), (0.68, 0.027, 0.88), (-0.68, 0.027, 0.88))]
+    face = screen.bm.faces.new(v[::-1])
+    face.material_index = screen.mi("Monitor_Screen")
+    for loop in face.loops:
+        co = loop.vert.co
+        loop[screen.uv].uv = (1.0 - (co.x + 0.68) / 1.36, (co.z - 0.12) / 0.76)
+    export("Monitor", [monitor.build(), screen.build()])
+
+    chair = Mesh("Chair")
+    chair.box((0.5, 0.5, 0.09), T(0, 0, 0.47), "Chair_Fabric")
+    chair.box((0.46, 0.07, 0.62), T(0, 0.26, 0.86) @ Rx(-8), "Chair_Fabric")
+    chair.cyl((0, 0, 0.1), (0, 0, 0.44), 0.035, 0.035, "Chair_Frame", 10)
+    for k in range(5):
+        a = TAU * k / 5
+        end = Vector((math.cos(a) * 0.32, math.sin(a) * 0.32, 0.05))
+        chair.strut((0, 0, 0.1), end, 0.02, "Chair_Frame")
+        chair.sphere(end - Vector((0, 0, 0.02)), 0.03, "Chair_Frame", 1)
+    for side in (-1, 1):
+        chair.box((0.05, 0.3, 0.03), T(side * 0.29, 0.02, 0.68), "Chair_Frame")
+        chair.box((0.03, 0.03, 0.2), T(side * 0.29, 0.1, 0.58), "Chair_Frame")
+    export("Chair", [chair.build()])
+
+
+# ----------------------------------------------------------------------------------------------
 # Title letters: each letter is its own object so the game can fly them in one by one.
 # ----------------------------------------------------------------------------------------------
 
@@ -770,7 +898,8 @@ def main():
         "rocket": build_rocket, "portal": build_portal, "ball": build_grip_ball, "asteroids": build_asteroids,
         "people": lambda: (build_person("Person_Standing", False), build_person("Person_Seated", True)),
         "tower": build_launch_tower, "trees": lambda: (build_dead_tree("DeadTree_1", 3), build_dead_tree("DeadTree_2", 8)),
-        "crate": build_crate, "title": build_title, "textures": (lambda: None) if PREVIEW else build_textures,
+        "crate": build_crate, "furniture": build_furniture, "glove": build_glove,
+        "living_trees": lambda: (build_tree("Tree_1", 5, 9.5, 1.0), build_tree("Tree_2", 12, 12.0, 0.8), build_tree("Tree_3", 31, 7.0, 1.2)), "title": build_title, "textures": (lambda: None) if PREVIEW else build_textures,
     }
     for name, step in steps.items():
         if not only or name in only:

@@ -4,8 +4,9 @@ using UnityEngine.UI;
 namespace TSAGame
 {
     /// <summary>
-    /// Makes a camera look like 1990s home video: the camera draws into a small 4:3 picture, which is shown
-    /// full-screen through the TSA/Vhs shader with a camcorder "PLAY" label and a date stamp on top.
+    /// Makes a camera look like 1990s home video being watched on an old television: the camera draws into a small
+    /// 4:3 picture, and the TSA/Vhs shader shows it on a curved CRT screen in a dark room, with a camcorder
+    /// "PLAY" label and a date stamp on the glass.
     /// </summary>
     public class VhsFilter : MonoBehaviour
     {
@@ -39,28 +40,28 @@ namespace TSAGame
             var black = UIFactory.CreateImage("Black", canvas.transform, Color.black);
             UIFactory.Stretch(black.rectTransform);
 
-            var frame = UIFactory.CreateRect("Picture", canvas.transform);
-            frame.anchorMin = frame.anchorMax = new Vector2(0.5f, 0.5f);
-            var fitter = frame.gameObject.AddComponent<AspectRatioFitter>();
-            fitter.aspectMode = AspectRatioFitter.AspectMode.HeightControlsWidth;
-            fitter.aspectRatio = (float)resolution.x / resolution.y;
-            frame.anchorMin = new Vector2(0.5f, 0f);
-            frame.anchorMax = new Vector2(0.5f, 1f);
-            frame.offsetMin = frame.offsetMax = Vector2.zero;
-
-            var image = frame.gameObject.AddComponent<RawImage>();
+            // The whole frame is one image: the shader draws the television, its curved screen and the dark room.
+            var image = UIFactory.CreateRect("Television", canvas.transform).gameObject.AddComponent<RawImage>();
+            UIFactory.Stretch(image.rectTransform);
             image.texture = picture;
             image.raycastTarget = false;
             material = new Material(shader);
+            material.SetFloat("_Aspect", (float)Screen.width / Screen.height);
             image.material = material;
+
+            // Camcorder labels sit on the glass, so they live in a 4:3 box the size of the TV's picture.
+            var frame = UIFactory.CreateRect("On-screen Labels", canvas.transform);
+            frame.anchorMin = frame.anchorMax = new Vector2(0.5f, 0.5f);
+            frame.sizeDelta = new Vector2(1080f * 0.78f * 4f / 3f, 1080f * 0.78f);
+            frame.anchoredPosition = new Vector2(0f, 1080f * 0.03f);
 
             var ink = new Color(1f, 1f, 1f, 0.92f);
             var play = UIFactory.CreateText("Play", frame, "PLAY ▶", 44, TextAnchor.UpperLeft, ink);
-            UIFactory.Place(play.rectTransform, new Vector2(0, 1), new Vector2(400, 60), new Vector2(60, -50));
+            UIFactory.Place(play.rectTransform, new Vector2(0, 1), new Vector2(400, 60), new Vector2(80, -70));
             var speed = UIFactory.CreateText("Speed", frame, "SP", 44, TextAnchor.UpperRight, ink);
-            UIFactory.Place(speed.rectTransform, new Vector2(1, 1), new Vector2(200, 60), new Vector2(-60, -50));
+            UIFactory.Place(speed.rectTransform, new Vector2(1, 1), new Vector2(200, 60), new Vector2(-80, -70));
             var stamp = UIFactory.CreateText("Date", frame, dateStamp, 40, TextAnchor.LowerLeft, ink);
-            UIFactory.Place(stamp.rectTransform, new Vector2(0, 0), new Vector2(900, 110), new Vector2(60, 60));
+            UIFactory.Place(stamp.rectTransform, new Vector2(0, 0), new Vector2(900, 110), new Vector2(80, 80));
         }
 
         public void Disable()

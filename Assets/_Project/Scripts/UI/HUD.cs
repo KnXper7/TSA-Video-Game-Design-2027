@@ -60,6 +60,8 @@ namespace TSAGame
             }
             if ((FindAnyObjectByType<FirstPersonController>() != null || FindAnyObjectByType<ZeroGPlayer>() != null) && GetComponent<StatsPanel>() == null)
                 gameObject.AddComponent<StatsPanel>();
+            if ((FindAnyObjectByType<FirstPersonController>() != null || FindAnyObjectByType<ZeroGPlayer>() != null) && GetComponent<Compass>() == null)
+                gameObject.AddComponent<Compass>();
 
             SetFade(startBlack ? 1f : 0f);
             HideSubtitle();

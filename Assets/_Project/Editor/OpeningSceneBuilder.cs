@@ -27,37 +27,74 @@ namespace TSAGame.EditorTools
 
         static void BuildMissionControl(Mats m, VolumeProfile post)
         {
-            var scene = NewScene(SpacePostProfile(), ambient: new Color(0.05f, 0.065f, 0.1f), skybox: false);
+            var scene = NewScene(SpacePostProfile(), ambient: new Color(0.06f, 0.068f, 0.085f), skybox: false);
             // The sun sits ahead and to the upper left, so rocks and the rocket are edge-lit against it.
-            var sun = Sun(Quaternion.Euler(12f, 148f, 0f), 2.4f);
-            sun.color = new Color(0.82f, 0.9f, 1f);
+            // Three lights, as in the target picture:
+            //  key  - the blue-white star, upper left and a little behind the rocks, so it catches their edges;
+            //  fill - soft, almost neutral light from the camera side, so the faces toward us show their detail;
+            //  bounce - a trace of warm orange coming up off the planet.
+            var sun = Sun(Quaternion.Euler(12f, 148f, 0f), 3.6f);
+            sun.color = new Color(0.78f, 0.88f, 1f);
             SunFlare(sun);
-            RimLight(Quaternion.Euler(25f, -30f, 0f), new Color(0.45f, 0.6f, 1f), 0.55f);
+            RimLight(Quaternion.Euler(18f, -22f, 0f), new Color(0.7f, 0.78f, 0.92f), 0.4f).name = "Fill Light";
+            // The star again, from further round to the side: it paints the left-hand edges of the rocks and the
+            // planet's left limb cool white, and leaves their right-hand sides in shadow.
+            RimLight(Quaternion.Euler(24f, 112f, 0f), new Color(0.72f, 0.86f, 1f), 1.25f).name = "Star Side Light";
+            RimLight(Quaternion.Euler(-35f, 120f, 0f), new Color(1f, 0.62f, 0.38f), 0.3f).name = "Planet Bounce";      // a trace of warm light bounced off the planet
 
             // ---- The room ----
             var room = new GameObject("Mission Control Room").transform;
-            Prim(PrimitiveType.Cube, "Floor", room, new Vector3(0, -0.1f, 0), new Vector3(24, 0.2f, 18), m.Floor);
+            var wall = ModelMats["Room_Wall"];
+            Prim(PrimitiveType.Cube, "Floor", room, new Vector3(0, -0.1f, 0), new Vector3(24, 0.2f, 18), ModelMats["Room_Floor"]);
             Prim(PrimitiveType.Cube, "Ceiling", room, new Vector3(0, 7.1f, 0), new Vector3(24, 0.2f, 18), m.Wall);
-            Prim(PrimitiveType.Cube, "Wall Left", room, new Vector3(-12, 3.5f, 0), new Vector3(0.2f, 7, 18), m.Wall);
-            Prim(PrimitiveType.Cube, "Wall Right", room, new Vector3(12, 3.5f, 0), new Vector3(0.2f, 7, 18), m.Wall);
-            Prim(PrimitiveType.Cube, "Wall Back", room, new Vector3(0, 3.5f, -9), new Vector3(24, 7, 0.2f), m.Wall);
-            Prim(PrimitiveType.Cube, "Wall Front", room, new Vector3(0, 3.5f, 9), new Vector3(24, 7, 0.2f), m.Wall);
+            Prim(PrimitiveType.Cube, "Wall Left", room, new Vector3(-12, 3.5f, 0), new Vector3(0.2f, 7, 18), wall);
+            Prim(PrimitiveType.Cube, "Wall Right", room, new Vector3(12, 3.5f, 0), new Vector3(0.2f, 7, 18), wall);
+            Prim(PrimitiveType.Cube, "Wall Back", room, new Vector3(0, 3.5f, -9), new Vector3(24, 7, 0.2f), wall);
+            Prim(PrimitiveType.Cube, "Wall Front", room, new Vector3(0, 3.5f, 9), new Vector3(24, 7, 0.2f), wall);
+            // Ceiling beams, light panels and a glowing strip along the foot of each wall
+            for (int i = -2; i <= 2; i++)
+                Prim(PrimitiveType.Cube, "Ceiling Beam", room, new Vector3(0, 6.85f, i * 3.6f), new Vector3(24, 0.3f, 0.35f), ModelMats["Rocket_Dark"], collider: false);
+            foreach (var p in new[] { new Vector3(-6, 6.98f, -4), new Vector3(6, 6.98f, -4), new Vector3(-6, 6.98f, 4), new Vector3(6, 6.98f, 4) })
+                Prim(PrimitiveType.Cube, "Light Panel", room, p, new Vector3(3.2f, 0.04f, 1.2f), ModelMats["Tower_Light"], collider: false);
+            foreach (float x in new[] { -11.86f, 11.86f })
+                Prim(PrimitiveType.Cube, "Floor Strip", room, new Vector3(x, 0.08f, 0), new Vector3(0.05f, 0.05f, 17.6f), ModelMats["Strip_Warm"], collider: false);
+            var probe = new GameObject("Reflection Probe").AddComponent<ReflectionProbe>();
+            probe.transform.SetParent(room, false);
+            probe.transform.position = new Vector3(0, 3.5f, 0);
+            probe.size = new Vector3(24, 7, 18);
+            probe.mode = ReflectionProbeMode.Realtime;
+            probe.refreshMode = ReflectionProbeRefreshMode.OnAwake;
+            probe.boxProjection = true;
+
+            // What the desk monitors and wall screens show
+            var screens = new[]
+            {
+                ScreenMaterial("Screen_Telemetry", Generated("Screen_Telemetry")), ScreenMaterial("Screen_StarChart", Generated("Screen_StarChart")),
+                ScreenMaterial("Screen_Vitals", Generated("Screen_Vitals")), ScreenMaterial("Screen_Schematic", Generated("Screen_Schematic")),
+            };
 
             // Big screen fed by the tracking camera, with data screens all around it
             var feed = LoadOrCreateRenderTexture($"{MaterialsDir}/TrackingFeed.renderTexture");
             m.Screen.SetTexture("_BaseMap", feed);
             var screenSlot = Slot("MainScreen", room, new Vector3(0, 4f, 8.85f), Vector3.zero);
             var screen = Prim(PrimitiveType.Quad, "Placeholder", screenSlot, new Vector3(0, -0.15f, 0), new Vector3(9.4f, 5.2f, 1), m.Screen, collider: false);
+            Prim(PrimitiveType.Cube, "Main Screen Frame", room, new Vector3(0, 3.85f, 8.97f), new Vector3(9.9f, 5.7f, 0.2f), ModelMats["Monitor_Bezel"], collider: false);
             var status = WorldText("Screen Status", room, new Vector3(0, 6.72f, 8.75f), new Vector2(1000, 50), 0.01f, 36, new Color(0.6f, 0.9f, 1f));
-            DataScreen(room, new Vector3(-8.3f, 5.1f, 8.88f), 0f, new Vector2(5.2f, 2.4f), m, "DISTANCE TO PLANET X\n40,000 KM");
-            DataScreen(room, new Vector3(-8.3f, 2.4f, 8.88f), 0f, new Vector2(5.2f, 2.4f), m, "MISSION DAY 427\nVELOCITY 11.2 KM/S");
-            DataScreen(room, new Vector3(8.3f, 5.1f, 8.88f), 0f, new Vector2(5.2f, 2.4f), m, "CREW VITALS\nNOMINAL");
-            DataScreen(room, new Vector3(8.3f, 2.4f, 8.88f), 0f, new Vector2(5.2f, 2.4f), m, "FUEL 61%\nCOMMS DELAY 0.4 S");
-            string[] wallData = { "TRAJECTORY\nON COURSE", "GUIDANCE\nGREEN", "POWER\n98%", "LIFE SUPPORT\nGREEN", "DEEP SPACE NET\nLOCKED", "THERMAL\nNOMINAL" };
-            for (int i = 0; i < 3; i++)
+            var wallScreens = new[] { new Vector3(-8.3f, 5.15f, 8.88f), new Vector3(-8.3f, 2.3f, 8.88f), new Vector3(8.3f, 5.15f, 8.88f), new Vector3(8.3f, 2.3f, 8.88f) };
+            for (int i = 0; i < 4; i++)
             {
-                DataScreen(room, new Vector3(-11.88f, 4.2f, 5f - i * 5f), -90f, new Vector2(4f, 2.2f), m, wallData[i]);
-                DataScreen(room, new Vector3(11.88f, 4.2f, 5f - i * 5f), 90f, new Vector2(4f, 2.2f), m, wallData[i + 3]);
+                Prim(PrimitiveType.Quad, "Wall Screen", room, wallScreens[i], new Vector3(4.9f, 2.74f, 1), screens[i], collider: false);
+                Prim(PrimitiveType.Cube, "Wall Screen Frame", room, wallScreens[i] + new Vector3(0, 0, 0.1f), new Vector3(5.3f, 3.14f, 0.16f), ModelMats["Monitor_Bezel"], collider: false);
+            }
+            string[] wallData = { "TRAJECTORY\nON COURSE", "GUIDANCE\nGREEN", "POWER\n98%", "LIFE SUPPORT\nGREEN", "DEEP SPACE NET\nLOCKED", "THERMAL\nNOMINAL" };
+            // Server racks with blinking panels down both side walls
+            for (int i = 0; i < 6; i++)
+            foreach (float side in new[] { -1f, 1f })
+            {
+                var at = new Vector3(side * 11.45f, 1.7f, 7f - i * 2.7f);
+                Prim(PrimitiveType.Cube, "Server Rack", room, at, new Vector3(0.9f, 3.4f, 2.2f), ModelMats["Monitor_Bezel"]);
+                Prim(PrimitiveType.Quad, "Rack Panel", room, at + new Vector3(-side * 0.46f, 0.2f, 0), new Vector3(1.9f, 2.6f, 1), ModelMats["Ship_Instruments"],
+                    Quaternion.Euler(0, side * 90f, 0), collider: false);
             }
 
             // Desks, monitors and people watching them, in three rows
@@ -72,15 +109,19 @@ namespace TSAGame.EditorTools
             {
                 n++;
                 var desk = Slot($"Desk{n}", desks, new Vector3(x, 0, z), Vector3.zero);
-                Prim(PrimitiveType.Cube, "Placeholder", desk, new Vector3(0, 0.375f, 0), new Vector3(7, 0.75f, 1.2f), m.Desk);
-                PointLight("Monitor Glow", desk, new Vector3(x, 1.3f, z - 0.5f), new Color(0.5f, 0.8f, 1f), 5f, 4.5f);
+                Model("Desk", desk, Vector3.zero, Quaternion.identity, 1f);
+                var deskBox = desk.gameObject.AddComponent<BoxCollider>();
+                deskBox.center = new Vector3(0, 0.4f, 0);
+                deskBox.size = new Vector3(7, 0.8f, 1.25f);
+                if (n % 2 == 1) PointLight("Monitor Glow", desk, new Vector3(x, 1.25f, z - 0.25f), new Color(0.5f, 0.8f, 1f), 3f, 4f);
                 for (int s = -1; s <= 1; s++)
                 {
-                    Prim(PrimitiveType.Quad, $"Monitor {s + 2}", desk, new Vector3(s * 2.2f, 1.15f, 0.3f), new Vector3(1.4f, 0.75f, 1), m.ScreenBlue, collider: false);
-                    Prim(PrimitiveType.Cube, $"Monitor Back {s + 2}", desk, new Vector3(s * 2.2f, 1.15f, 0.34f), new Vector3(1.46f, 0.81f, 0.05f), m.Console, collider: false);
-                    var seatPosition = new Vector3(x + s * 2.2f, 0, z - 1.1f);
-                    Prim(PrimitiveType.Cube, "Chair", desk, new Vector3(s * 2.2f, 0.22f, -1.12f), new Vector3(0.5f, 0.44f, 0.5f), m.Console, collider: false);
-                    Prim(PrimitiveType.Cube, "Chair Back", desk, new Vector3(s * 2.2f, 0.7f, -1.4f), new Vector3(0.5f, 0.9f, 0.08f), m.Console, collider: false);
+                    // Every third monitor shows the live tracking feed; the others cycle through the data screens.
+                    int slotNumber = n * 3 + s;
+                    var picture = slotNumber % 4 == 2 ? m.Screen : screens[slotNumber % 4];
+                    Model("Monitor", desk, new Vector3(s * 2.2f, 1.0f, 0.42f), Quaternion.identity, 1f, new() { ["Monitor_Screen"] = picture });
+                    var seatPosition = new Vector3(x + s * 2.2f, 0, z - 0.78f);
+                    Model("Chair", desk, new Vector3(s * 2.2f, 0, -0.8f), Quaternion.identity, 1f);
                     bool raisesAlarm = n == 4 && s == 0;
                     string who = raisesAlarm ? "Controller" : operators[(n * 3 + s + 1) % operators.Length];
                     var op = Person($"Operator{n}_{s + 2}", desk, seatPosition, 0f, true, who, raisesAlarm ? Speakers.Controller : null,
@@ -98,7 +139,12 @@ namespace TSAGame.EditorTools
             // Lights and alarm
             var normalLights = new List<Light>();
             foreach (var p in new[] { new Vector3(-6, 6.5f, -4), new Vector3(6, 6.5f, -4), new Vector3(-6, 6.5f, 4), new Vector3(6, 6.5f, 4) })
-                normalLights.Add(PointLight("Ceiling Light", room, p, new Color(1f, 0.93f, 0.82f), 34f, 20f));
+            {
+                // Warm downlights that pool on the floor, as in the target image.
+                var down = PointLight("Ceiling Light", room, p, new Color(1f, 0.84f, 0.64f), 55f, 20f);
+                normalLights.Add(down);
+            }
+            PointLight("Room Fill", room, new Vector3(0, 5.5f, -2), new Color(1f, 0.85f, 0.7f), 14f, 24f);
             var alarmLights = new List<Light>();
             foreach (var p in new[] { new Vector3(-11, 6, -6), new Vector3(11, 6, -6), new Vector3(-11, 6, 6), new Vector3(11, 6, 6) })
                 alarmLights.Add(PointLight("Alarm Light", room, p, new Color(1f, 0.1f, 0.05f), 0f, 18f));
@@ -106,6 +152,7 @@ namespace TSAGame.EditorTools
             Set(alarm, ("alarmLights", alarmLights.Cast<Object>().ToArray()), ("normalLights", normalLights.Cast<Object>().ToArray()));
 
             InteriorVolume(room, new Vector3(0, 3.5f, 0), new Vector3(26, 9, 20));
+            Motes(room, new Vector3(0, 3.5f, 0), new Vector3(22, 6, 16), 400, new Color(0.8f, 0.9f, 1f, 0.35f), 0.02f, 0.03f, true);
 
             // ---- Space: also the backdrop of the main menu ----
             var space = new GameObject("Space").transform;
@@ -118,7 +165,7 @@ namespace TSAGame.EditorTools
             var planet = Slot("PlanetX", space, Space + new Vector3(-1100, -620, 3900), Vector3.zero);
             var planetBody = Prim(PrimitiveType.Sphere, "Placeholder", planet, Vector3.zero, Vector3.one * 1500f, m.PlanetX, collider: false);
             planetBody.AddComponent<Spinner>();
-            DressPlanet(planet, 1500f, "PlanetX", new Color(1f, 0.6f, 0.35f), -sun.transform.forward, rings: true);
+            DressPlanet(planet, 1500f, "PlanetX", new Color(1f, 0.55f, 0.3f), -sun.transform.forward, rings: true);
             Debris(space, Space + new Vector3(0, 0, 420), new Vector3(700, 300, 1000), 2200, new Vector2(0.2f, 2.2f), new Vector2(-16, -7), 26f);
 
             // Asteroids drifting through the menu view; a clear lane is left for the rocket
@@ -176,9 +223,15 @@ namespace TSAGame.EditorTools
             Prim(PrimitiveType.Cube, "Seat", cabinShell, new Vector3(0, 0.22f, -0.05f), new Vector3(0.7f, 0.44f, 0.6f), m.Seat, collider: false);
             Prim(PrimitiveType.Cube, "Seat Back", cabinShell, new Vector3(0, 0.95f, -0.42f), new Vector3(0.7f, 1.5f, 0.14f), m.Seat, collider: false);
             Prim(PrimitiveType.Cube, "Console", cabinShell, new Vector3(0, 0.4f, 0.95f), new Vector3(2.4f, 0.8f, 0.5f), m.Console, collider: false);
+            foreach (var r in cabinShell.GetComponentsInChildren<Renderer>())
+                if (r.name.StartsWith("Wall") || r.name == "Ceiling") r.sharedMaterial = ModelMats["Ship_Padding"];
+            ShipInterior(cabinShell, new Vector3(3.2f, 2.4f, 5f), Vector3.zero, 2.5f);
+            Prim(PrimitiveType.Cube, "Hatch", cabinShell, new Vector3(0.9f, 1.15f, -1.13f), new Vector3(1.0f, 2.0f, 0.06f), ModelMats["Ship_Panels"], collider: false);
+            Prim(PrimitiveType.Cube, "Hatch Frame", cabinShell, new Vector3(0.9f, 1.15f, -1.15f), new Vector3(1.16f, 2.16f, 0.05f), ModelMats["Rocket_Metal"], collider: false);
+            Prim(PrimitiveType.Cube, "Headrest", cabinShell, new Vector3(0, 1.72f, -0.38f), new Vector3(0.42f, 0.3f, 0.16f), m.Seat, collider: false);
             for (int i = -1; i <= 1; i++)
                 Prim(PrimitiveType.Quad, "Panel", cabinShell, new Vector3(i * 1.0f, 1.5f, -1.14f), new Vector3(0.7f, 0.45f, 1), m.ConsoleScreen, collider: false);
-            Person("PilotInCabin", cabin, cabinOrigin + new Vector3(0, 0, 0), 0f, true, "Commander", Speakers.Commander, astronaut: true, typing: false);
+            Person("PilotInCabin", cabin, cabinOrigin + new Vector3(0, 0, 0), 0f, true, "Astronaut", Speakers.Commander, typing: false);
             InteriorVolume(cabin, cabinOrigin + new Vector3(0, 1.2f, 0.5f), new Vector3(6, 5, 8));
             var flash = PointLight("Portal Light", cabin, cabinOrigin + new Vector3(0.6f, 1.7f, 2.4f), new Color(0.6f, 0.85f, 1f), 6f, 9f);
             flash.gameObject.AddComponent<FlickerLight>();
@@ -250,7 +303,6 @@ namespace TSAGame.EditorTools
                 Line(Speakers.Technician, "What is that?"),
                 Line(Speakers.Controller, "It's not on any chart. It wasn't there a second ago."),
                 Line(Speakers.FlightDirector, "Commander, abort the approach. Pull away. Pull away now!"));
-            s5.shake = 0.01f;
             UnityEventTools.AddPersistentListener(s5.onStart, new UnityAction(alarm.Trigger));
             UnityEventTools.AddPersistentListener(s5.onStart, new UnityAction(monitor.ShowAlert));
             shots.Add(s5);
@@ -300,11 +352,11 @@ namespace TSAGame.EditorTools
             RenderSettings.ambientGroundColor = new Color(0.3f, 0.24f, 0.19f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Exponential;
-            RenderSettings.fogDensity = 0.0045f;
-            RenderSettings.fogColor = new Color(0.8f, 0.62f, 0.44f);
+            RenderSettings.fogDensity = 0.003f;
+            RenderSettings.fogColor = new Color(0.88f, 0.47f, 0.27f);      // dust the colour of the sky
             var sun = Sun(Quaternion.Euler(34f, 38f, 0f), 1.6f);
             sun.color = new Color(1f, 0.78f, 0.55f);
-            RenderSettings.skybox = DustSky(-sun.transform.forward);
+            RenderSettings.skybox = PanoSky("Sky_DustClouds", "Sky_Dust", 2.6f);
 
             var mm = ModelMats;
             var pad = new Vector3(0, 0, 70);
@@ -341,17 +393,8 @@ namespace TSAGame.EditorTools
                 tree.name = "MODEL_DeadTree";
             }
 
-            // A city on the horizon, half lost in the dust
-            var city = Slot("DistantCity", null, Vector3.zero, Vector3.zero);
-            var cityShell = new GameObject("Placeholder").transform;
-            cityShell.SetParent(city, false);
-            for (int i = 0; i < 34; i++)
-            {
-                float angle = Range(random, -70f, 70f) * Mathf.Deg2Rad, distance = Range(random, 330f, 470f), height = Range(random, 25f, 130f);
-                var p = pad + new Vector3(Mathf.Sin(angle) * distance, height / 2f - 4f, Mathf.Cos(angle) * distance);
-                Prim(PrimitiveType.Cube, "Tower Block", cityShell, p, new Vector3(Range(random, 14f, 30f), height, Range(random, 14f, 30f)), m.Ruin,
-                    Quaternion.Euler(0, Range(random, 0, 90), random.Next(6) == 0 ? 6f : 0f), collider: false);
-            }
+            // A ruined city on the horizon, half lost in the dust
+            SkylineRing(pad, 420f, 150f, mm["Skyline"], -110f, 110f, 4);
 
             // ---- Launch pad, tower and rocket ----
             var padSlot = Slot("LaunchPad", null, pad + new Vector3(0, 0.02f, 0), Vector3.zero);
@@ -395,7 +438,7 @@ namespace TSAGame.EditorTools
             var engineerSlot = Person("Engineer", null, pad + new Vector3(-0.8f, 0, -9.6f), 180f, false, "Engineer", Speakers.Engineer, lookAtPlayer: true);
             var engineer = Talkable(engineerSlot, "Talk to the engineer");
             var ballSlot = Slot("GripBallGift", engineerSlot, engineerSlot.TransformPoint(new Vector3(0.3f, 1.2f, 0.55f)), Vector3.zero);
-            Model("GripBall", ballSlot, Vector3.zero, Quaternion.identity, 1.8f);
+            Model("GripBall", ballSlot, Vector3.zero, Quaternion.identity, 1f);
             ballSlot.gameObject.AddComponent<Spinner>();
             Set(ballSlot.GetComponent<Spinner>(), ("degreesPerSecond", new Vector3(20, 45, 0)));
 
@@ -449,10 +492,16 @@ namespace TSAGame.EditorTools
                          (new Vector3(12, 1.3f, 36), 15f, new Vector3(6, 2.6f, 2.5f)), (new Vector3(15, 1.3f, 30), -70f, new Vector3(6, 2.6f, 2.5f)),
                          (new Vector3(-10, 1.3f, 30), 80f, new Vector3(6, 2.6f, 2.5f)),
                      })
-                Prim(PrimitiveType.Cube, "Container", supplies, p, size, mm["Tower_Steel"], Quaternion.Euler(0, yaw, 0));
+                Prim(PrimitiveType.Cube, "Container", supplies, p, size, mm["Container_Rust"], Quaternion.Euler(0, yaw, 0));
             for (int i = 0; i < 9; i++)
             {
                 var crate = Model("Crate", supplies, new Vector3(Range(random, -8, 10), 0, Range(random, 27, 40)), Quaternion.Euler(0, Range(random, 0, 360), 0), Range(random, 0.9f, 1.4f));
+                crate.name = "MODEL_Crate";
+            }
+            // Supply cases scattered across the ground between the player and the pad
+            for (int i = 0; i < 14; i++)
+            {
+                var crate = Model("Crate", supplies, new Vector3(Range(random, -16, 20), 0, Range(random, 14, 52)), Quaternion.Euler(0, Range(random, 0, 360), 0), Range(random, 1.2f, 1.9f));
                 crate.name = "MODEL_Crate";
             }
             var crowd = new GameObject("Crowd").transform;
@@ -469,7 +518,9 @@ namespace TSAGame.EditorTools
             Prim(PrimitiveType.Cube, "Fence Rail", crowd, new Vector3(46, 1f, -19.5f), new Vector3(25f, 0.08f, 0.08f), mm["Crate_Trim"]);
 
             // ---- Player ----
-            var (player, _) = Player(new Vector3(2, 0, 22), 1.65f, seatedYawLimit: 0f);
+            var (player, playerCam) = Player(new Vector3(2, 0, 22), 1.65f, seatedYawLimit: 0f);
+            // Grit blowing across the dry ground, carried along with the player
+            Motes(playerCam.transform, new Vector3(0, 0, 6), new Vector3(40, 8, 40), 500, new Color(0.9f, 0.75f, 0.55f, 0.55f), 0.06f, 0.4f, false, new Vector3(3.5f, 0.1f, 1f));
 
             // ---- Launch cameras, VHS filter and the title stage ----
             var cutsceneCam = NewCamera("Cutscene Camera", Vector3.zero, Quaternion.identity, 32f, listener: true, post: true);
@@ -501,7 +552,8 @@ namespace TSAGame.EditorTools
                 ("guidanceCore", guidanceCore), ("lift", lift), ("pumpBeacon", pumpBeacon), ("botanistBeacon", botanistBeacon),
                 ("coreBeacon", coreBeacon), ("liftBeacon", liftBeacon), ("seedCase", seedCase.gameObject), ("ballProp", ballSlot.gameObject),
                 ("cutsceneCamera", cutsceneCam), ("vhs", vhs), ("rocket", rocket), ("rocketCentre", rocketCentre), ("plumes", plumes),
-                ("padSmoke", padSmoke), ("launchLight", launchLight), ("wideShot", wide), ("lowShot", low), ("titleShot", titleShot), ("title", title), ("titleStage", stageRoot.gameObject));
+                ("padSmoke", padSmoke), ("launchLight", launchLight), ("wideShot", wide), ("lowShot", low), ("titleShot", titleShot), ("title", title), ("titleStage", stageRoot.gameObject),
+                ("engineerPerson", engineerSlot.GetComponentInChildren<PersonAnimator>()));
 
             AddHud();
             Save(scene, SceneFlow.Memory);
@@ -545,6 +597,7 @@ namespace TSAGame.EditorTools
             var hatch = Child(rocketModel, "Anchor_Hatch");
             var hatchLight = PointLight("Hatch Light", hatch, hatch.position - rocket.right * 1.2f, new Color(0.3f, 1f, 0.45f), 8f, 30f);
             Set(hatchLight.gameObject.AddComponent<FlickerLight>(), ("minIntensity", 3f), ("maxIntensity", 14f), ("speed", 1.5f));
+            hatch.gameObject.AddComponent<CompassMarker>();
             Prim(PrimitiveType.Sphere, "Hatch Lamp", hatch, new Vector3(0, 0, 0), Vector3.one * 0.35f, m.Leaves, collider: false)
                 .GetComponent<Renderer>().sharedMaterial = ModelMats["Hatch_Lamp"];
             var plume = Plume("Engine Plume", rocket, new Vector3(0, 0, -2.2f), Quaternion.Euler(180, 0, 0), 2.6f, 26f, 0.55f, 300f, false,
@@ -552,7 +605,7 @@ namespace TSAGame.EditorTools
 
             var markers = new GameObject("Markers").transform;
             var rocketRest = Pose("Rocket Rest", markers, restPosition, restRotation);
-            var rocketFlyStart = Pose("Rocket Fly Start", markers, restPosition - rocket.forward * 85f, restRotation);
+            var rocketFlyStart = Pose("Rocket Fly Start", markers, restPosition - rocket.forward * 240f, restRotation);
 
             // The rock that hit it, wedged into the engine section
             var rockRestPosition = restPosition + rocket.forward * 5f - rocket.right * 3.2f + rocket.up * 1.5f;
@@ -560,7 +613,7 @@ namespace TSAGame.EditorTools
             var rockModel = Model("Asteroid_2", rockSlot, Vector3.zero, Quaternion.identity, 4.5f);
             AddMeshColliders(rockModel);
             var rockRest = Pose("Rock Rest", markers, rockRestPosition, rockSlot.rotation);
-            var rockStart = Pose("Rock Start", markers, rockRestPosition - rocket.right * 70f + rocket.up * 30f + rocket.forward * 20f, rockSlot.rotation);
+            var rockStart = Pose("Rock Start", markers, rockRestPosition - rocket.right * 150f + rocket.up * 60f + rocket.forward * 30f, rockSlot.rotation);
 
             var damage = new GameObject("Damage Effects").transform;
             damage.SetParent(rocket, false);
@@ -610,22 +663,31 @@ namespace TSAGame.EditorTools
             cam.nearClipPlane = 0.05f;
             cam.transform.SetParent(head, false);
             var shake = cam.gameObject.AddComponent<CameraShake>();
-            PointLight("Helmet Lamp", cam.transform, Vector3.zero, new Color(0.85f, 0.92f, 1f), 6f, 22f).transform.localPosition = new Vector3(0, 0.1f, 0);
+            PointLight("Helmet Lamp", cam.transform, Vector3.zero, new Color(0.85f, 0.92f, 1f), 1.2f, 22f).transform.localPosition = new Vector3(0, 0.1f, 0);
             var zeroG = player.AddComponent<ZeroGPlayer>();
             Set(zeroG, ("cameraPivot", head));
             var oxygen = player.AddComponent<OxygenSystem>();
             Set(oxygen, ("baseDrainPerSecond", 0.42f));
 
             var ballSlot = Slot("GripBall", null, Vector3.zero, Vector3.zero);
-            Model("GripBall", ballSlot, Vector3.zero, Quaternion.identity, 1f);
+            Model("GripBall", ballSlot, Vector3.zero, Quaternion.identity, 0.6f);
             var tetherObject = new GameObject("Tether");
             var tether = tetherObject.AddComponent<LineRenderer>();
-            tether.sharedMaterial = m.Beacon;
-            tether.positionCount = 2;
-            tether.widthMultiplier = 0.012f;
+            tether.sharedMaterial = ModelMats["Tether_Cable"];
+            tether.positionCount = 16;
+            tether.widthMultiplier = 0.006f;
+            tether.numCapVertices = 2;
             tether.shadowCastingMode = ShadowCastingMode.Off;
             var ball = new GameObject("Grip Ball Controller").AddComponent<GripBall>();
-            Set(ball, ("player", zeroG), ("view", cam), ("ball", ballSlot), ("tether", tether));
+            // The player's own suit glove (an AI-generated model, see Tools/blender/import_generated.py).
+            // It is turned so the fingers point forward and the palm faces up, cupping the ball.
+            var gloveSlot = Slot("PlayerHand", null, Vector3.zero, Vector3.zero);
+            var glove = (GameObject)PrefabUtility.InstantiatePrefab(PersonPrefab("AstronautGlove", animated: false), gloveSlot);
+            glove.transform.localRotation = Quaternion.Euler(0, 0, 90) * Quaternion.Euler(0, 90, 0);
+            glove.transform.localPosition = new Vector3(0, -0.07f, -0.1f);
+            var impactDust = DustBurst("Grip Impact Dust", null, Vector3.zero, new Color(0.62f, 0.58f, 0.54f), 26, 0.12f, 3.5f);
+            Set(ball, ("player", zeroG), ("view", cam), ("ball", ballSlot), ("tether", tether), ("hand", gloveSlot), ("impactDust", impactDust));
+            Motes(cam.transform, Vector3.zero, new Vector3(30, 30, 30), 160, new Color(0.8f, 0.85f, 1f, 0.5f), 0.015f, 0.05f, false);
 
             var sequence = new GameObject("Adrift Sequence").AddComponent<AdriftSequence>();
             Set(sequence, ("player", zeroG), ("ball", ball), ("oxygen", oxygen), ("playerShake", shake), ("hatch", hatch),
@@ -720,7 +782,7 @@ namespace TSAGame.EditorTools
         [System.Serializable] class PersonManifest { public PersonPart[] parts; }
 
         /// <summary>The prefab for a character: the rigged model with its materials and a PersonAnimator. Made once.</summary>
-        static GameObject PersonPrefab(string character)
+        static GameObject PersonPrefab(string character, bool animated = true)
         {
             EnsureFolder($"{PrefabsDir}/People");
             EnsureFolder($"{MaterialsDir}/People");
@@ -748,7 +810,7 @@ namespace TSAGame.EditorTools
                 renderer.sharedMaterial = PersonMaterial(character, part, folder);
                 if (renderer is SkinnedMeshRenderer skinned) skinned.updateWhenOffscreen = true;     // posed far from the rest pose
             }
-            root.AddComponent<PersonAnimator>();
+            if (animated) root.AddComponent<PersonAnimator>();
             prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             Object.DestroyImmediate(root);
             return prefab;
@@ -828,12 +890,13 @@ namespace TSAGame.EditorTools
             label.text = text;
         }
 
-        /// <summary>A glowing column that marks where to go.</summary>
+        /// <summary>A place to head for: shown on the compass line at the top of the screen while it is active.</summary>
         static GameObject Beacon(Vector3 basePosition, Mats m)
         {
-            var beacon = Prim(PrimitiveType.Cylinder, "Objective Beacon", null, basePosition + new Vector3(0, 9, 0), new Vector3(0.12f, 8f, 0.12f), m.Beacon, collider: false);
-            PointLight("Beacon Light", beacon.transform, basePosition + new Vector3(0, 1.5f, 0), new Color(0.4f, 0.85f, 1f), 3f, 8f);
-            return beacon;
+            var marker = new GameObject("Objective Marker");
+            marker.transform.position = basePosition + new Vector3(0, 1.2f, 0);
+            marker.AddComponent<CompassMarker>();
+            return marker;
         }
 
         /// <summary>Four posts and a roof.</summary>
@@ -863,6 +926,8 @@ namespace TSAGame.EditorTools
             var model = Model("Portal", slot, Vector3.zero, Quaternion.identity, 1f);
             var vortex = Prim(PrimitiveType.Quad, "Vortex", slot, Vector3.zero, Vector3.one * 20.4f, ModelMats["Portal_Vortex"], collider: false);
             var light = PointLight("Portal Glow", slot, slot.position - slot.forward * 6f * slot.lossyScale.x, new Color(0.4f, 0.75f, 1f), 0f, 45f * slot.lossyScale.x);
+            var inflow = Motes(slot, Vector3.zero, new Vector3(34, 34, 6), 600, new Color(0.5f, 0.85f, 1f, 0.9f), 0.5f, 0.6f, true, new Vector3(0, 0, 3f));
+            inflow.transform.localScale = Vector3.one;
             var gate = slot.gameObject.AddComponent<PortalGate>();
             Set(gate, ("ringMain", Child(model, "RingMain")), ("ringOuter", Child(model, "RingOuter")), ("ringInner", Child(model, "RingInner")),
                 ("vortex", vortex.GetComponent<Renderer>()), ("glow", light), ("glowIntensity", glowIntensity));
@@ -957,6 +1022,84 @@ namespace TSAGame.EditorTools
             return ps;
         }
 
+        /// <summary>A short puff of grit thrown off a surface (the grip ball biting in, a foot pushing off).</summary>
+        static ParticleSystem DustBurst(string name, Transform parent, Vector3 position, Color color, int count, float size, float speed)
+        {
+            var go = new GameObject(name);
+            if (parent != null) go.transform.SetParent(parent, false);
+            go.transform.position = position;
+            var ps = go.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.playOnAwake = false;
+            main.loop = false;
+            main.duration = 0.5f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.6f, 1.8f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(speed * 0.2f, speed);
+            main.startSize = new ParticleSystem.MinMaxCurve(size * 0.4f, size * 1.6f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+            main.startColor = color;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            var emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)count) });
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 55f;
+            shape.radius = 0.05f;
+            var fade = ps.colorOverLifetime;
+            fade.enabled = true;
+            var gradient = new Gradient();
+            gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0.9f, 0f), new GradientAlphaKey(0f, 1f) });
+            fade.color = gradient;
+            var grow = ps.sizeOverLifetime;
+            grow.enabled = true;
+            grow.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.6f, 1f, 2.4f));
+            var drag = ps.limitVelocityOverLifetime;
+            drag.enabled = true;
+            drag.dampen = 0.08f;
+            drag.limit = speed * 0.3f;
+            go.GetComponent<ParticleSystemRenderer>().sharedMaterial = ModelMats["Smoke"];
+            return ps;
+        }
+
+        /// <summary>Tiny specks drifting in a box of air: dust in a beam of light, pollen over a meadow, grit blowing past.</summary>
+        static ParticleSystem Motes(Transform parent, Vector3 centre, Vector3 size, int count, Color color, float moteSize, float speed, bool glow, Vector3 wind = default)
+        {
+            var go = new GameObject("Motes");
+            if (parent != null) go.transform.SetParent(parent, false);
+            go.transform.localPosition = centre;
+            var ps = go.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.loop = true;
+            main.prewarm = true;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(8f, 16f);
+            main.startSpeed = 0f;
+            main.startSize = new ParticleSystem.MinMaxCurve(moteSize * 0.5f, moteSize * 1.5f);
+            main.startColor = color;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = count;
+            var emission = ps.emission;
+            emission.rateOverTime = count / 12f;
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = size;
+            var velocity = ps.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.space = ParticleSystemSimulationSpace.World;
+            velocity.x = new ParticleSystem.MinMaxCurve(wind.x - speed, wind.x + speed);
+            velocity.y = new ParticleSystem.MinMaxCurve(wind.y - speed, wind.y + speed);
+            velocity.z = new ParticleSystem.MinMaxCurve(wind.z - speed, wind.z + speed);
+            var fade = ps.colorOverLifetime;
+            fade.enabled = true;
+            var gradient = new Gradient();
+            gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.2f), new GradientAlphaKey(1f, 0.8f), new GradientAlphaKey(0f, 1f) });
+            fade.color = gradient;
+            go.GetComponent<ParticleSystemRenderer>().sharedMaterial = ModelMats[glow ? "Fire" : "Smoke"];
+            return ps;
+        }
+
         static ParticleSystem Burst(string name, Transform parent, Vector3 position)
         {
             var go = new GameObject(name);
@@ -994,6 +1137,19 @@ namespace TSAGame.EditorTools
         {
             Texture2D Tex(string name) => AssetDatabase.LoadAssetAtPath<Texture2D>($"{TexturesDir}/{name}.png");
             var panels = Tex("HullPanels_n");
+            var gasGiant = AssetDatabase.LoadAssetAtPath<Material>($"{MaterialsDir}/Planet_X.mat");
+            if (Fresh(gasGiant) && Generated("PlanetX_Bands") != null)
+            {
+                gasGiant.SetColor("_BaseColor", Color.white);
+                gasGiant.SetFloat("_ReceiveShadows", 0f);
+                gasGiant.EnableKeyword("_RECEIVE_SHADOWS_OFF");
+                Textured(gasGiant, Generated("PlanetX_Bands"), null, Vector2.one, 1f);
+                // A little self-glow so the cloud bands still read on the night side, as they do in long-exposure photos.
+                gasGiant.EnableKeyword("_EMISSION");
+                gasGiant.SetTexture("_EmissionMap", Generated("PlanetX_Bands"));
+                gasGiant.SetColor("_EmissionColor", Color.white * 0.12f);
+                freshAssets.Remove(gasGiant);      // keep the generic planet setup below from replacing it
+            }
             foreach (var (planetMat, texture) in new[] { ("Planet_X", "PlanetX"), ("Planet_NotEarth", "NotEarth") })
             {
                 var planetMaterial = AssetDatabase.LoadAssetAtPath<Material>($"{MaterialsDir}/{planetMat}.mat");
@@ -1047,6 +1203,29 @@ namespace TSAGame.EditorTools
                 ["Canvas"] = Mat("Camp_Canvas", new Color(0.6f, 0.55f, 0.45f), 0.05f),
                 ["Glasshouse"] = Mat("Camp_Glasshouse", new Color(0.7f, 0.78f, 0.75f), 0.8f),
                 ["DataScreen"] = Mat("MC_DataScreen", new Color(0.02f, 0.05f, 0.09f), 0.8f, emission: new Color(0.03f, 0.12f, 0.24f)),
+                ["Room_Wall"] = Textured(Mat("Room_Wall", new Color(0.75f, 0.78f, 0.85f), 0.45f, metallic: 0.35f), Generated("WallPanels"), null, new Vector2(6, 2), 1f),
+                ["Room_Floor"] = Textured(Mat("Room_Floor", new Color(0.55f, 0.56f, 0.6f), 0.78f, metallic: 0.05f), Generated("FloorTiles"), null, new Vector2(8, 6), 1f),
+                ["Ship_Panels"] = Textured(Mat("Ship_Panels", new Color(0.85f, 0.87f, 0.92f), 0.5f, metallic: 0.45f), Generated("WallPanels"), null, new Vector2(2, 1), 1f),
+                ["Ship_Instruments"] = ScreenMaterial("Ship_Instruments", Generated("InstrumentPanel"), 0.95f),
+                ["Granite"] = Textured(Mat("Granite", Color.white, 0.15f), Generated("Granite"), Tex("Rock_n"), new Vector2(1, 1), 1.2f),
+                ["Tree_Bark"] = Textured(Mat("Tree_Bark", new Color(0.85f, 0.8f, 0.75f), 0.08f), Generated("Bark"), null, new Vector2(1, 1), 1f),
+                ["Tree_Leaves"] = Cutout(Textured(Mat("Tree_Leaves", new Color(0.82f, 0.95f, 0.75f), 0.12f), Generated("Leaves"), null, new Vector2(1, 1), 1f)),
+                ["Desk_Top"] = Mat("Desk_Top", new Color(0.09f, 0.1f, 0.12f), 0.7f, metallic: 0.2f),
+                ["Desk_Frame"] = Mat("Desk_Frame", new Color(0.26f, 0.28f, 0.32f), 0.6f, metallic: 0.8f),
+                ["Desk_Keys"] = Mat("Desk_Keys", new Color(0.03f, 0.03f, 0.035f), 0.5f),
+                ["Desk_Light"] = Mat("Desk_Light", new Color(0.3f, 0.8f, 1f), emission: new Color(0.3f, 0.8f, 1f) * 2.5f),
+                ["Monitor_Bezel"] = Mat("Monitor_Bezel", new Color(0.025f, 0.025f, 0.03f), 0.6f, metallic: 0.3f),
+                ["Monitor_Screen"] = ScreenMaterial("Monitor_Screen", Generated("Screen_Telemetry")),
+                ["Chair_Fabric"] = Mat("Chair_Fabric", new Color(0.07f, 0.08f, 0.1f), 0.2f),
+                ["Chair_Frame"] = Mat("Chair_Frame", new Color(0.2f, 0.21f, 0.23f), 0.65f, metallic: 0.8f),
+                ["Glove_Suit"] = Mat("Glove_Suit", new Color(0.86f, 0.86f, 0.84f), 0.3f),
+                ["Glove_Grip"] = Mat("Glove_Grip", new Color(0.1f, 0.1f, 0.12f), 0.35f),
+                ["Tether_Cable"] = Mat("Tether_Cable", new Color(0.55f, 0.57f, 0.6f), 0.7f, metallic: 0.9f),
+                ["Container_Rust"] = Textured(Mat("Container_Rust", new Color(0.85f, 0.8f, 0.78f), 0.2f, metallic: 0.3f), Generated("Container"), null, new Vector2(3, 1), 1f),
+                ["Skyline"] = Cutout(Textured(Mat("Skyline_Ruins", new Color(0.8f, 0.72f, 0.62f), 0f), Generated("Skyline"), null, new Vector2(1, 1), 1f)),
+                ["Ship_Padding"] = Mat("Ship_Padding", new Color(0.09f, 0.095f, 0.11f), 0.25f),
+                ["Strip_Warm"] = Mat("Strip_Warm", new Color(1f, 0.6f, 0.25f), emission: new Color(1f, 0.55f, 0.2f) * 4f),
+                ["Lamp_Red"] = Mat("Lamp_Red", new Color(1f, 0.15f, 0.1f), emission: new Color(1f, 0.12f, 0.06f) * 5f),
                 ["Hatch_Lamp"] = Mat("Hatch_Lamp", new Color(0.3f, 1f, 0.45f), emission: new Color(0.3f, 1f, 0.45f) * 5f),
                 ["Portal_Vortex"] = VortexMaterial(),
                 ["Fire"] = ParticleMaterial("Fire", AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd"), Color.white * 1.6f, additive: true),
@@ -1069,6 +1248,61 @@ namespace TSAGame.EditorTools
             mat.renderQueue = (int)RenderQueue.Transparent;
             EditorUtility.SetDirty(mat);
             return mat;
+        }
+
+        /// <summary>Cuts a material out by its texture's transparency and shows both sides (leaves).</summary>
+        static Material Cutout(Material mat)
+        {
+            if (!Fresh(mat)) return mat;
+            mat.SetFloat("_AlphaClip", 1f);
+            mat.SetFloat("_Cutoff", 0.4f);
+            mat.EnableKeyword("_ALPHATEST_ON");
+            mat.SetFloat("_Cull", 0f);
+            mat.renderQueue = (int)RenderQueue.AlphaTest;
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>
+        /// Dresses a plain box of a spacecraft cabin: structural ribs, instrument panels down both walls and overhead,
+        /// and strip lights. size is the room's inside (width, height, length); it is centred on x and starts at the floor.
+        /// </summary>
+        static void ShipInterior(Transform parent, Vector3 size, Vector3 centre, float frontZ)
+        {
+            var rib = ModelMats["Rocket_Metal"];
+            var instruments = ModelMats["Ship_Instruments"];
+            float halfWidth = size.x / 2f - 0.06f;
+            for (float z = centre.z - size.z / 2f + 0.6f; z < centre.z + size.z / 2f; z += 1.1f)
+            {
+                Prim(PrimitiveType.Cube, "Rib Top", parent, new Vector3(centre.x, size.y - 0.08f, z), new Vector3(size.x, 0.12f, 0.1f), rib, collider: false);
+                foreach (float side in new[] { -1f, 1f })
+                    Prim(PrimitiveType.Cube, "Rib Side", parent, new Vector3(centre.x + side * halfWidth, size.y / 2f, z), new Vector3(0.1f, size.y, 0.1f), rib, collider: false);
+            }
+            foreach (float side in new[] { -1f, 1f })
+            {
+                Prim(PrimitiveType.Quad, "Wall Instruments", parent, new Vector3(centre.x + side * (halfWidth - 0.02f), 1.25f, centre.z + 0.4f),
+                    new Vector3(2.6f, 0.9f, 1), instruments, Quaternion.Euler(0, side * 90f, 0), collider: false);
+                Prim(PrimitiveType.Cube, "Strip Light", parent, new Vector3(centre.x + side * (halfWidth - 0.05f), size.y - 0.25f, centre.z), new Vector3(0.04f, 0.04f, size.z - 0.6f),
+                    ModelMats["Tower_Light"], collider: false);
+            }
+            // Pipes and a cable run under the ceiling, stowage bags, and an emergency lamp
+            foreach (float side in new[] { -1f, 1f })
+            {
+                Prim(PrimitiveType.Cylinder, "Pipe", parent, new Vector3(centre.x + side * (halfWidth - 0.14f), size.y - 0.42f, centre.z), new Vector3(0.08f, size.z / 2f - 0.2f, 0.08f),
+                    ModelMats["Rocket_Metal"], Quaternion.Euler(90, 0, 0), collider: false);
+                Prim(PrimitiveType.Cylinder, "Cable", parent, new Vector3(centre.x + side * (halfWidth - 0.1f), size.y - 0.56f, centre.z), new Vector3(0.03f, size.z / 2f - 0.2f, 0.03f),
+                    ModelMats["Rocket_Accent"], Quaternion.Euler(90, 0, 0), collider: false);
+            }
+            for (int k = 0; k < 2; k++)
+            {
+                var bag = new Vector3(centre.x - halfWidth + 0.15f, 1.55f - k * 0.72f, centre.z - size.z / 2f + 1.0f);
+                Prim(PrimitiveType.Cube, "Stowage Bag", parent, bag, new Vector3(0.2f, 0.56f, 0.95f), ModelMats["Chair_Fabric"], collider: false);
+                Prim(PrimitiveType.Cube, "Bag Strap", parent, bag, new Vector3(0.22f, 0.58f, 0.07f), ModelMats["Rocket_Accent"], collider: false);
+            }
+            var lampAt = new Vector3(centre.x + halfWidth - 0.22f, size.y - 0.55f, centre.z - size.z / 2f + 0.35f);
+            Prim(PrimitiveType.Sphere, "Emergency Lamp", parent, lampAt, Vector3.one * 0.17f, ModelMats["Lamp_Red"], collider: false);
+            Prim(PrimitiveType.Quad, "Overhead Instruments", parent, new Vector3(centre.x, size.y - 0.3f, frontZ - 0.08f), new Vector3(size.x - 0.8f, 0.42f, 1), instruments,
+                Quaternion.Euler(-25f, 0, 0), collider: false);
         }
 
         static Material Textured(Material mat, Texture2D albedo, Texture2D normal, Vector2 tiling, float normalStrength)

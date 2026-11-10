@@ -23,6 +23,8 @@ namespace TSAGame
         [SerializeField] GameObject liftBeacon;
         [SerializeField] GameObject seedCase;
         [SerializeField] GameObject ballProp;
+        [Tooltip("The engineer's animator: he holds the grip ball out in his hand and tosses it to the player.")]
+        [SerializeField] PersonAnimator engineerPerson;
 
         [Header("Launch")]
         [SerializeField] Camera cutsceneCamera;
@@ -60,10 +62,33 @@ namespace TSAGame
             ballProp.SetActive(false);
             titleStage.SetActive(false);
 
+            // Black. A voice calling him, closer each time. Then his eyes open.
+            player.CanLook = false;
             yield return new WaitForSeconds(1f);
             yield return hud.ShowTitle("FOURTEEN MONTHS EARLIER", "Earth. Launch day.", 2.5f);
-            StartCoroutine(hud.FadeTo(0f, 3f, Color.black));
-            yield return Dialogue.Say(Speakers.Commander, "I remember that morning. The last one I spent on Earth.");
+            yield return new WaitForSeconds(0.8f);
+            yield return Dialogue.Say(Speakers.Engineer, "Commander.");
+            yield return new WaitForSeconds(0.8f);
+            yield return Dialogue.Say(Speakers.Engineer, "Commander?");
+            yield return new WaitForSeconds(0.5f);
+            yield return Dialogue.Say(Speakers.Engineer, "Commander! Wake up. It's launch day.");
+
+            // Eyes open, close again, then open properly.
+            yield return hud.FadeTo(0.35f, 0.5f, Color.black);
+            yield return hud.FadeTo(1f, 0.35f, Color.black);
+            yield return new WaitForSeconds(0.4f);
+            StartCoroutine(hud.FadeTo(0f, 2.2f, Color.black));
+
+            // He looks down at his own hands, turns them over, and looks up again. Then he can move.
+            var head = Camera.main.transform.parent;
+            for (float t = 0f; t < 3.4f; t += Time.deltaTime)
+            {
+                float down = Mathf.SmoothStep(0f, 1f, t / 1.2f) * Mathf.SmoothStep(1f, 0f, (t - 2.4f) / 1f);
+                head.localRotation = Quaternion.Euler(down * 58f, Mathf.Sin(t * 1.3f) * 4f * down, 0f);
+                yield return null;
+            }
+            head.localRotation = Quaternion.identity;
+            player.CanLook = true;
             player.CanMove = true;
 
             // The briefing
@@ -164,9 +189,15 @@ namespace TSAGame
         {
             var state = GameState.Instance;
             yield return Dialogue.Say(Speakers.Engineer, "That's everything on the manifest. And one thing that isn't.");
+            // He takes it out and holds it up in his hand while he explains it.
             ballProp.SetActive(true);
-            AudioManager.Play(Sfx.Pickup);
-            HUD.Instance.ShowToast("Received: grip ball");
+            var ball = ballProp.transform;
+            if (engineerPerson != null && engineerPerson.RightHand != null)
+            {
+                engineerPerson.Present(true);
+                ball.position = engineerPerson.RightHand.position + Vector3.up * 0.07f;
+                ball.SetParent(engineerPerson.RightHand, true);
+            }
             yield return Dialogue.Play(
                 (Speakers.Commander, "It's... a lumpy metal ball."),
                 (Speakers.Engineer, "It's a grip anchor. See the bumps? They bite into anything. Rock, hull, ice."),
@@ -183,7 +214,24 @@ namespace TSAGame
                 1 => "Try hard.",
                 _ => "As long as there's power to run them.",
             });
+            // He tosses it over; you catch it.
+            ball.SetParent(null, true);
+            if (engineerPerson != null) engineerPerson.Present(false);
+            AudioManager.Play(Sfx.Throw, 0.7f);
+            var from = ball.position;
+            for (float t = 0f; t < 0.7f; t += Time.deltaTime)
+            {
+                float k = t / 0.7f;
+                var cam = Camera.main.transform;
+                var to = cam.position + cam.forward * 0.45f - cam.up * 0.25f;
+                ball.position = Vector3.Lerp(from, to, k) + Vector3.up * (Mathf.Sin(k * Mathf.PI) * 0.45f);
+                ball.Rotate(300f * Time.deltaTime, 200f * Time.deltaTime, 0f);
+                yield return null;
+            }
             ballProp.SetActive(false);
+            AudioManager.Play(Sfx.Thud, 0.5f);
+            AudioManager.Play(Sfx.Pickup, 0.6f);
+            HUD.Instance.ShowToast("Received: grip ball");
             yield return Dialogue.Play(
                 (Speakers.Engineer, "This is it, then."),
                 (Speakers.Commander, "This is it."));

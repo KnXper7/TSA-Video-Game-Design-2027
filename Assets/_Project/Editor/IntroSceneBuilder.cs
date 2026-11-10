@@ -101,6 +101,7 @@ namespace TSAGame.EditorTools
             var post = CreatePostProfile();
 
             ModelMats = CreateModelMaterials();
+            ApplySurfaceDetail();
             RemoveOldScenes();
 
             int built = 0;
@@ -147,6 +148,8 @@ namespace TSAGame.EditorTools
             Prim(PrimitiveType.Cube, "Front Upper", shell, new Vector3(0, 2.4f, 3f), new Vector3(4, 0.5f, 0.1f), m.Cockpit);
             Prim(PrimitiveType.Cube, "Front Left", shell, new Vector3(-1.75f, 1.45f, 3f), new Vector3(0.5f, 1.4f, 0.1f), m.Cockpit);
             Prim(PrimitiveType.Cube, "Front Right", shell, new Vector3(1.75f, 1.45f, 3f), new Vector3(0.5f, 1.4f, 0.1f), m.Cockpit);
+            foreach (var renderer in shell.GetComponentsInChildren<Renderer>()) renderer.sharedMaterial = ModelMats[renderer.name == "Floor" ? "Ship_Panels" : "Ship_Padding"];
+            ShipInterior(shell, new Vector3(4f, 2.6f, 5.5f), new Vector3(0, 0, 0.25f), 3f);
             var shutter = Prim(PrimitiveType.Cube, "Window Shutter", cockpit, new Vector3(0, 1.45f, 2.92f), new Vector3(3.1f, 1.5f, 0.06f), m.Shutter);
 
             var seat = Slot("PilotSeat", cockpit, new Vector3(0, 0, -0.9f), Vector3.zero);
@@ -201,34 +204,29 @@ namespace TSAGame.EditorTools
         static void BuildLandingSite(Mats m, VolumeProfile post)
         {
             var scene = NewScene(post, ambient: Color.clear, skybox: true);
-            Sun(Quaternion.Euler(38f, -35f, 0f), 1.5f);
+            // Early-morning light: a low, warm sun and a sky with real clouds.
+            var sun = Sun(Quaternion.Euler(24f, -35f, 0f), 1.9f);
+            sun.color = new Color(1f, 0.9f, 0.72f);
+            RenderSettings.skybox = PanoSky("Sky_MorningClouds", "Sky_Morning", 1.1f);
+            RenderSettings.ambientMode = AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.85f, 0.95f, 1.1f);
+            RenderSettings.ambientEquatorColor = new Color(0.7f, 0.8f, 0.7f);
+            RenderSettings.ambientGroundColor = new Color(0.35f, 0.4f, 0.28f);
 
-            var terrain = new GameObject("Terrain").transform;
-            Prim(PrimitiveType.Plane, "Ground", terrain, Vector3.zero, new Vector3(40, 1, 40), m.Grass);
+            // Ground, river, forest and boulders (see WorldBuilder.cs). The meadow around the crash is flat at height 0.
             var random = new System.Random(7);
-            for (int i = 0; i < 8; i++)
+            var terrain = LandingTerrain();
+            Water(-0.55f, -sun.transform.forward);
+            Scatter(terrain, random, new[]
             {
-                float angle = (float)random.NextDouble() * Mathf.PI * 2f;
-                float distance = 70f + (float)random.NextDouble() * 90f;
-                float size = 30f + (float)random.NextDouble() * 50f;
-                Prim(PrimitiveType.Sphere, "Hill", terrain, new Vector3(Mathf.Cos(angle) * distance, -size * 0.35f, Mathf.Sin(angle) * distance),
-                    new Vector3(size, size * 0.6f, size), m.Hill);
-            }
-
-            // Trees: one prefab, so replacing the prefab's model swaps every tree
-            var treePrefab = TreePrefab(m);
-            var forest = new GameObject("Forest").transform;
-            for (int i = 0; i < 70; i++)
-            {
-                var p = new Vector3(((float)random.NextDouble() - 0.5f) * 180f, 0, ((float)random.NextDouble() - 0.5f) * 180f);
-                if (p.magnitude < 18f) continue;                                      // keep the crash site clear
-                if (Vector3.Distance(p, new Vector3(45, 0, 95)) < 14f) continue;      // and the second rocket's clearing
-                if (Vector3.Distance(p, new Vector3(-40, 0, 84)) < 16f) continue;     // and the ancient gate
-                var tree = (GameObject)PrefabUtility.InstantiatePrefab(treePrefab, forest);
-                tree.transform.position = p;
-                tree.transform.rotation = Quaternion.Euler(0, (float)random.NextDouble() * 360f, 0);
-                tree.transform.localScale = Vector3.one * (0.8f + (float)random.NextDouble() * 0.6f);
-            }
+                (new Vector3(0, 0, 7), 20f), (new Vector3(45, 0, 95), 15f), (new Vector3(-40, 0, 88), 18f), (new Vector3(-40, 0, 58), 16f),
+                (new Vector3(-12, 0, 14), 3f), (new Vector3(15, 0, -8), 3f), (new Vector3(-7, 0, -17), 3f),
+            });
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.Exponential;
+            // Light haze in the colour of the sky, so far hills turn blue with distance, not grey.
+            RenderSettings.fogDensity = 0.0011f;
+            RenderSettings.fogColor = new Color(0.55f, 0.74f, 0.98f);
 
             // Burnt moon in the sky
             var moon = Slot("BurntMoon", null, new Vector3(500, 650, 1500), Vector3.zero);
@@ -261,8 +259,8 @@ namespace TSAGame.EditorTools
                 var crate = (GameObject)PrefabUtility.InstantiatePrefab(cratePrefab, salvageRoot);
                 crate.transform.position = p;
                 salvage.Add(crate.GetComponent<Interactable>());
-                var beacon = Prim(PrimitiveType.Cylinder, "Salvage Beacon", salvageRoot, p + new Vector3(0, 8, 0), new Vector3(0.15f, 8f, 0.15f), m.Beacon, collider: false);
-                PointLight("Beacon Light", beacon.transform, p + new Vector3(0, 1.5f, 0), new Color(0.4f, 0.85f, 1f), 4f, 8f);
+                var beacon = Beacon(p, m);
+                beacon.transform.SetParent(salvageRoot, true);
                 beacons.Add(beacon);
             }
 
@@ -300,8 +298,7 @@ namespace TSAGame.EditorTools
             shipCollider.height = 34f;
             var signalMarker = new GameObject("Signal Marker").transform;
             signalMarker.position = oldRocket.position;
-            Prim(PrimitiveType.Cylinder, "Beam", signalMarker, new Vector3(0, 40, 0), new Vector3(0.4f, 40f, 0.4f), m.Beacon, collider: false);
-            PointLight("Signal Light", signalMarker, oldRocket.position + new Vector3(0, 13, 0), new Color(0.4f, 0.85f, 1f), 6f, 25f);
+            signalMarker.gameObject.AddComponent<CompassMarker>();
             var signalZone = TriggerBox("Signal Trigger", oldRocket, oldRocket.position + new Vector3(0, 4, 0), new Vector3(18, 10, 18));
             var pilotShip = oldRocket.gameObject.AddComponent<Interactable>();
             Set(pilotShip, ("prompt", "Board the ship"));
@@ -309,7 +306,9 @@ namespace TSAGame.EditorTools
             PersonInto(pilot, "Pilot", false, Speakers.Pilot, lookAtPlayer: true, tint: new Color(1f, 0.62f, 0.3f));
 
             // Player
-            var (player, _) = Player(new Vector3(4.5f, 0, 1.5f), 1.65f, seatedYawLimit: 0f);
+            var (player, landingCam) = Player(new Vector3(4.5f, 0, 1.5f), 1.65f, seatedYawLimit: 0f);
+            // Pollen and seeds drifting in the sunlight
+            Motes(landingCam.transform, new Vector3(0, 1, 5), new Vector3(30, 8, 30), 350, new Color(1f, 0.98f, 0.85f, 0.7f), 0.025f, 0.15f, false, new Vector3(0.4f, 0.05f, 0.2f));
             player.transform.rotation = Quaternion.Euler(0, -35f, 0); // facing the sensor kit, wreck to the side
             var oxygen = player.AddComponent<OxygenSystem>();
 

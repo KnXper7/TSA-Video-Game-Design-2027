@@ -58,7 +58,7 @@ namespace TSAGame
 
             Throw = new InputAction("Throw", InputActionType.Button, "<Mouse>/leftButton");
             Throw.AddBinding("<Gamepad>/rightTrigger");
-            Pull = new InputAction("Pull", InputActionType.Button, "<Mouse>/rightButton");
+            Pull = new InputAction("Pull", InputActionType.Button, "<Mouse>/leftButton");
             Pull.AddBinding("<Gamepad>/leftTrigger");
             Recall = new InputAction("Recall", InputActionType.Button, "<Keyboard>/r");
             Recall.AddBinding("<Gamepad>/buttonNorth");

@@ -14,7 +14,7 @@ Press **Play** in `Scenes/01_MissionControl`. The game starts at the main menu a
 | `08_Harvester` | Acts III-IV | Get into the station (4 solutions), Architect records, the target list, the lost transmissions | `HarvesterSequence` |
 | `09_Control` | Act V | Power the control console, make the final decision | `ControlSequence` |
 
-Controls: WASD / mouse (or gamepad), **E** interact, **1-4** dialogue choices, **Tab** stats, hold **Esc** to skip the opening cutscene. In zero gravity: **left mouse** throws the grip ball, hold **right mouse** to reel in, **R** calls it back, **Space** pushes off a rock you are touching.
+Controls: WASD / mouse (or gamepad), **E** interact, **1-4** dialogue choices, **Tab** stats, hold **Esc** to skip the opening cutscene. In zero gravity: **left mouse** throws the grip ball; when it grips it pulses, then hold **left mouse** to pull yourself in; **R** calls it back, **Space** pushes off a rock you are touching.
 
 You can press Play in any scene from 02 on to test it by itself; the later chapters start with 4 fuel cells and default stats.
 
@@ -67,6 +67,19 @@ Trust changes: approaching openly (+15) or watching first (-10), being honest ab
 | **Lost in the Network** | Run out of fuel cells. With Trust 50+ the pilot shares 2 cells once; otherwise the journey ends |
 
 Ending text is in `Scripts/Sequences/Endings.cs`. The endings are title cards for now; swap in cutscenes later.
+
+## TSA rules to keep in mind
+
+From the event guide (`HS - Video Game Design`): the game must be **playable in a web browser from a link** (no downloads or .exe), judges score the **first three levels**, the rating must be **E**, and a **portfolio PDF** (hand-drawn storyboard, control list, copyright checklist, Resources and AI Reflection) and a **demo video under 5 minutes** are required or the entry is not judged. Every asset not made by the team, and every use of AI, has to be listed. HDRP cannot be used because it does not run in a browser; the project stays on URP.
+
+## AI-generated and third-party assets (list these in the portfolio)
+
+- `Textures/Generated/*`: screen graphics and ground, bark, leaf, rock, wall and floor textures, made with Higgsfield (GPT Image).
+- `Models/People/Astronaut.fbx` and `AstronautGlove.fbx`: made with Higgsfield (Meshy text-to-3D), converted by `Tools/blender/import_generated.py`.
+- `Models/People/*` (other characters): MakeHuman / MPFB, CC0.
+- Fonts: Michroma and Rajdhani, SIL Open Font License.
+- Voices: macOS text-to-speech placeholders (replace with team recordings).
+- Code and scene building were written with an AI assistant (Claude).
 
 ## People
 

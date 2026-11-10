@@ -88,7 +88,7 @@ namespace TSAGame
             ball.enabled = true;
             ball.TakeOut();
             hud.ShowToast("Left mouse: throw at a rock");
-            hud.ShowToast("Hold right mouse: reel yourself in");
+            hud.ShowToast("When it pulses, hold left mouse to pull yourself in");
             hud.ShowToast("R: call the ball back");
             hud.ShowToast("Space: push off a rock you are touching");
 
@@ -159,11 +159,24 @@ namespace TSAGame
             AudioManager.Play(Sfx.Whoosh, 0.8f);
             StartCoroutine(hud.FadeTo(0f, 0.7f, Color.white));
 
-            const float duration = 2.6f;
+            // The shot takes its time: the rocket crosses the frame, the warning comes, and only then the rock arrives.
+            const float duration = 9f;
             var basePosition = impactShot.position;
+            bool warned = false, braced = false;
             for (float t = 0f; t < duration; t += Time.deltaTime)
             {
                 float k = t / duration;
+                if (!warned && t > 2.5f)
+                {
+                    warned = true;
+                    AudioManager.Play(Sfx.Warning);
+                    StartCoroutine(Dialogue.Say(Speakers.ShipAI, "Proximity alert. Object on a collision course."));
+                }
+                if (!braced && t > 6.3f && !Dialogue.IsPlaying)
+                {
+                    braced = true;
+                    StartCoroutine(Dialogue.Say(Speakers.Commander, "I see it. Brace—"));
+                }
                 rocket.position = Vector3.Lerp(rocketFlyStart.position, rocketRest.position, k);
                 rock.position = Vector3.Lerp(rockStart.position, rockRest.position, k * k);
                 rock.Rotate(40f * Time.deltaTime, 25f * Time.deltaTime, 0f);
@@ -172,6 +185,7 @@ namespace TSAGame
             }
 
             // The hit
+            Dialogue.Stop();
             AudioManager.Play(Sfx.Explosion);
             AudioManager.StopLoop("engine", 0.1f);
             debrisBurst.Play();

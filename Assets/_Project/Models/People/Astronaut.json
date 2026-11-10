@@ -1,0 +1,26 @@
+{
+ "parts": [
+  {
+   "name": "Part1",
+   "kind": "skin",
+   "texture": "Astronaut_1_color.png",
+   "normal": "Astronaut_1_normal.png",
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "name": "Part2",
+   "kind": "skin",
+   "texture": "",
+   "normal": "",
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  }
+ ]
+}

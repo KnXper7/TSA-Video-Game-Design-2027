@@ -10,6 +10,8 @@ d19c400b.wav,SHIP AI,Your suit has no thrusters. You have four minutes of air.,A
 c7d19850.wav,SHIP AI,Good. Now the next one. Work your way to the hull.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 d346dcf4.wav,COMMANDER,Got it. I've got the rail.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 1e112e6e.wav,SHIP AI,"Outer hatch cycling. Welcome back, Commander.",Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+a9ed2830.wav,SHIP AI,Proximity alert. Object on a collision course.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+6d86b86b.wav,COMMANDER,I see it. Brace—,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 0b3f05f1.wav,SHIP AI,"Commander? Commander, respond.",Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 b8de1cee.wav,SHIP AI,Hatch sealed. Cabin pressure is holding.,Assets/_Project/Scripts/Sequences/CockpitSequence.cs
 13981232.wav,SHIP AI,"Commander, the strike took out main power. Life support is running on reserve.",Assets/_Project/Scripts/Sequences/CockpitSequence.cs
@@ -128,7 +130,9 @@ d9aa370c.wav,COLONY PILOT,Then we're both a long way from help.,Assets/_Project/
 f9f99db8.wav,COLONY PILOT,A paradise. That's what the old stories say too.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
 9416d249.wav,SHIP AI,Neither ship has the fuel to leave. The burnt moon has ice we could refine.,Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
 c29c69d9.wav,COLONY PILOT,"My ship can still fly that far. My pump, your refinery. Neither works alone.",Assets/_Project/Scripts/Sequences/LandingSiteSequence.cs
-306e3e57.wav,COMMANDER,I remember that morning. The last one I spent on Earth.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+726ab228.wav,ENGINEER,Commander.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+636a9a8b.wav,ENGINEER,Commander?,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+29db5a6c.wav,ENGINEER,Commander! Wake up. It's launch day.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 67a7024f.wav,ENGINEER,There you are. She's fuelled and she's angry. Six hours to launch.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 352d9839.wav,ENGINEER,"Three things still aren't aboard: the water ration, the seed vault and the guidance core.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
 d48fabca.wav,COMMANDER,The three things I can't fly without.,Assets/_Project/Scripts/Sequences/MemorySequence.cs

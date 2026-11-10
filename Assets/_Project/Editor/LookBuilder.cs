@@ -46,21 +46,21 @@ namespace TSAGame.EditorTools
             profile = ScriptableObject.CreateInstance<VolumeProfile>();
             AssetDatabase.CreateAsset(profile, path);
             var bloom = profile.Add<Bloom>(true);
-            bloom.intensity.Override(1.7f);
+            bloom.intensity.Override(1.5f);
             bloom.threshold.Override(0.9f);
             bloom.scatter.Override(0.75f);
-            bloom.tint.Override(new Color(0.8f, 0.9f, 1f));
+            bloom.tint.Override(new Color(0.9f, 0.95f, 1f));
             bloom.highQualityFiltering.Override(true);
             var tonemapping = profile.Add<Tonemapping>(true);
             tonemapping.mode.Override(TonemappingMode.ACES);
             var colour = profile.Add<ColorAdjustments>(true);
-            colour.postExposure.Override(0.25f);
-            colour.contrast.Override(16f);
-            colour.saturation.Override(6f);
-            colour.colorFilter.Override(new Color(0.93f, 0.97f, 1f));
+            colour.postExposure.Override(0.45f);
+            colour.contrast.Override(18f);
+            colour.saturation.Override(-8f);
+            colour.colorFilter.Override(new Color(0.97f, 0.98f, 1f));
             var split = profile.Add<SplitToning>(true);
-            split.shadows.Override(new Color(0.35f, 0.5f, 0.75f));
-            split.highlights.Override(new Color(1f, 0.93f, 0.82f));
+            split.shadows.Override(new Color(0.44f, 0.5f, 0.58f));
+            split.highlights.Override(new Color(0.96f, 0.97f, 1f));
             split.balance.Override(-20f);
             var vignette = profile.Add<Vignette>(true);
             vignette.intensity.Override(0.34f);
@@ -88,13 +88,13 @@ namespace TSAGame.EditorTools
             profile = ScriptableObject.CreateInstance<VolumeProfile>();
             AssetDatabase.CreateAsset(profile, path);
             var bloom = profile.Add<Bloom>(true);
-            bloom.intensity.Override(0.7f);
-            bloom.threshold.Override(1.15f);
+            bloom.intensity.Override(1.1f);
+            bloom.threshold.Override(1.0f);
             bloom.scatter.Override(0.6f);
             bloom.tint.Override(Color.white);
             var colour = profile.Add<ColorAdjustments>(true);
-            colour.postExposure.Override(0.7f);
-            colour.contrast.Override(12f);
+            colour.postExposure.Override(0.75f);
+            colour.contrast.Override(22f);
             colour.saturation.Override(-6f);
             colour.colorFilter.Override(new Color(1f, 0.97f, 0.92f));
             var split = profile.Add<SplitToning>(true);
@@ -134,14 +134,16 @@ namespace TSAGame.EditorTools
         static void SunFlare(Light sun, float size = 1f)
         {
             var particle = AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd");
-            var glow = ParticleMaterial("Sun_Glow", particle, new Color(0.55f, 0.75f, 1f) * 0.9f, additive: true);
+            var glow = ParticleMaterial("Sun_Glow", particle, new Color(0.45f, 0.7f, 1f) * 0.6f, additive: true);
             var core = ParticleMaterial("Sun_Core", particle, new Color(0.9f, 0.95f, 1f) * 2.2f, additive: true);
             var streak = ParticleMaterial("Sun_Streak", particle, new Color(0.4f, 0.65f, 1f) * 1.6f, additive: true);
 
             var glare = new GameObject("Sun Glare").AddComponent<SunGlare>();
             Set(glare, ("sun", sun));
-            Prim(PrimitiveType.Quad, "Glow", glare.transform, Vector3.zero, new Vector3(2600, 2600, 1) * size, glow, collider: false);
-            Prim(PrimitiveType.Quad, "Core", glare.transform, Vector3.zero, new Vector3(700, 700, 1) * size, core, collider: false);
+            var raysMat = LoadOrCreate($"{MaterialsDir}/Sun_Rays.mat", () => new Material(Shader.Find("TSA/SunRays")));
+            Prim(PrimitiveType.Quad, "Rays", glare.transform, Vector3.zero, new Vector3(1900, 1900, 1) * size, raysMat, collider: false);
+            Prim(PrimitiveType.Quad, "Glow", glare.transform, Vector3.zero, new Vector3(1500, 1500, 1) * size, glow, collider: false);
+            Prim(PrimitiveType.Quad, "Core", glare.transform, Vector3.zero, new Vector3(300, 300, 1) * size, core, collider: false);
             Prim(PrimitiveType.Quad, "Streak", glare.transform, Vector3.zero, new Vector3(9000, 110, 1) * size, streak, collider: false);
             Prim(PrimitiveType.Quad, "Streak Fine", glare.transform, Vector3.zero, new Vector3(14000, 30, 1) * size, streak, collider: false);
         }
@@ -172,7 +174,12 @@ namespace TSAGame.EditorTools
             if (!rings) return;
 
             var ringMat = LoadOrCreate($"{MaterialsDir}/Rings_{name}.mat", () => new Material(Shader.Find("TSA/PlanetRing")));
-            Prim(PrimitiveType.Quad, "Rings", slot, Vector3.zero, Vector3.one * diameter * 2.15f, ringMat, Quaternion.Euler(83f, 0f, 14f), collider: false);
+            if (Fresh(ringMat))
+            {
+                ringMat.SetVector("_SunDir", directionToSun);
+                EditorUtility.SetDirty(ringMat);
+            }
+            Prim(PrimitiveType.Quad, "Rings", slot, Vector3.zero, Vector3.one * diameter * 2.5f, ringMat, Quaternion.Euler(83f, 0f, 14f), collider: false);
         }
 
         /// <summary>A box full of small tumbling rocks (see DebrisField).</summary>
@@ -262,6 +269,7 @@ namespace TSAGame.EditorTools
         {
             if (GraphicsSettings.currentRenderPipeline is not UniversalRenderPipelineAsset urp) return;
             urp.msaaSampleCount = 4;
+            urp.mainLightShadowmapResolution = 4096;
             urp.shadowDistance = 160f;
             urp.supportsHDR = true;
             EditorUtility.SetDirty(urp);

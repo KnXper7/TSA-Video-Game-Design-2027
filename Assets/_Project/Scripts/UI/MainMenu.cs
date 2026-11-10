@@ -23,8 +23,20 @@ namespace TSAGame
 
         void Start()
         {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
             Build();
             StartCoroutine(HUD.Instance.FadeTo(0f, 2.5f, Color.black));
+        }
+
+        void Update()
+        {
+            // The menu always needs a visible, free mouse.
+            if (!starting && (Cursor.lockState != CursorLockMode.None || !Cursor.visible))
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
         }
 
         void Build()
@@ -56,11 +68,45 @@ namespace TSAGame
 
         Button MenuButton(Transform parent, string label, int row, UnityEngine.Events.UnityAction action)
         {
-            var button = UIFactory.CreateButton(label, parent, label, 34, action);
-            UIFactory.Place((RectTransform)button.transform, new Vector2(0, 1), new Vector2(420, 78), new Vector2(110, -380 - row * 94));
-            var text = button.GetComponentInChildren<Text>();
-            text.alignment = TextAnchor.MiddleLeft;
-            text.rectTransform.offsetMin = new Vector2(34, 4);
+            var accentColor = new Color(0.55f, 0.85f, 1f);
+            var fill = UIFactory.CreateImage(label, parent, new Color(0.04f, 0.07f, 0.11f, 0.72f));
+            fill.raycastTarget = true;
+            UIFactory.Place(fill.rectTransform, new Vector2(0, 1), new Vector2(470, 76), new Vector2(110, -380 - row * 92));
+            var button = fill.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.None;
+            button.onClick.AddListener(() => AudioManager.Play(Sfx.Click));
+            button.onClick.AddListener(action);
+
+            // Thin lines top and bottom, an accent bar on the left that grows when hovered.
+            foreach (float edge in new[] { 0f, 1f })
+            {
+                var line = UIFactory.CreateImage("Line", fill.transform, new Color(accentColor.r, accentColor.g, accentColor.b, 0.35f));
+                line.rectTransform.anchorMin = new Vector2(0, edge);
+                line.rectTransform.anchorMax = new Vector2(1, edge);
+                line.rectTransform.sizeDelta = new Vector2(0, 1.5f);
+            }
+            var accent = UIFactory.CreateImage("Accent", fill.transform, accentColor);
+            accent.rectTransform.anchorMin = new Vector2(0, 0);
+            accent.rectTransform.anchorMax = new Vector2(0, 1);
+            accent.rectTransform.pivot = new Vector2(0, 0.5f);
+            accent.rectTransform.sizeDelta = new Vector2(4, 0);
+            var corner = UIFactory.CreateImage("Corner", fill.transform, accentColor);
+            UIFactory.Place(corner.rectTransform, new Vector2(1, 0), new Vector2(10, 10), Vector2.zero);
+
+            var number = UIFactory.CreateText("Number", fill.transform, $"0{row + 1}", 20, TextAnchor.MiddleLeft, new Color(accentColor.r, accentColor.g, accentColor.b, 0.75f));
+            UIFactory.Place(number.rectTransform, new Vector2(0, 0.5f), new Vector2(40, 30), new Vector2(26, 0));
+            var text = UIFactory.CreateText("Label", fill.transform, label, 26, TextAnchor.MiddleLeft, Color.white);
+            text.font = UIFactory.TitleFont;
+            UIFactory.Place(text.rectTransform, new Vector2(0, 0.5f), new Vector2(330, 40), new Vector2(72, 0));
+            var chevron = UIFactory.CreateText("Chevron", fill.transform, "›", 40, TextAnchor.MiddleRight, accentColor);
+            UIFactory.Place(chevron.rectTransform, new Vector2(1, 0.5f), new Vector2(40, 50), new Vector2(-22, 4));
+
+            var fx = fill.gameObject.AddComponent<MenuButtonFx>();
+            fx.accent = accent.rectTransform;
+            fx.label = text.rectTransform;
+            fx.fill = fill;
+            fx.text = text;
+            fx.chevron = chevron;
             return button;
         }
 

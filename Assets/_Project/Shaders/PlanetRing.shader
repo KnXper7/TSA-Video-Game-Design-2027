@@ -3,9 +3,11 @@ Shader "TSA/PlanetRing"
 {
     Properties
     {
-        _Color ("Colour", Color) = (0.62, 0.66, 0.78, 1)
-        _Inner ("Inner edge (0-1)", Range(0, 1)) = 0.6
-        _Opacity ("Opacity", Range(0, 1)) = 0.38
+        _Color ("Colour", Color) = (0.78, 0.84, 0.96, 1)
+        _SunDir ("Direction to the sun", Vector) = (0, 0.3, -1, 0)
+        _PlanetRadius ("Planet radius (0-1 of the ring)", Float) = 0.4
+        _Inner ("Inner edge (0-1)", Range(0, 1)) = 0.5
+        _Opacity ("Opacity", Range(0, 1)) = 0.9
         _Bands ("Band count", Float) = 110
     }
     SubShader
@@ -23,7 +25,8 @@ Shader "TSA/PlanetRing"
             #include "UnityCG.cginc"
 
             fixed4 _Color;
-            float _Inner, _Opacity, _Bands;
+            float _Inner, _Opacity, _Bands, _PlanetRadius;
+            float4 _SunDir;
 
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
 
@@ -45,8 +48,19 @@ Shader "TSA/PlanetRing"
                 float inside = smoothstep(0.0, 0.03, k) * smoothstep(1.0, 0.94, k);
                 float bands = noise(k * _Bands) * 0.6 + noise(k * _Bands * 4.3) * 0.4;
                 float gap = smoothstep(0.02, 0.05, abs(k - 0.62));             // one clear gap, like Saturn's
-                float alpha = inside * gap * (0.25 + 0.75 * bands) * _Opacity;
-                return fixed4(_Color.rgb * (0.6 + 0.6 * bands), alpha);
+                float fineBands = noise(k * _Bands * 13.0) * 0.5 + 0.5;
+                float alpha = inside * gap * (0.25 + 0.75 * bands) * fineBands * _Opacity;
+
+                // The planet's shadow falls across the rings on the side away from the sun.
+                float3 sun = normalize(mul((float3x3)unity_WorldToObject, _SunDir.xyz));
+                float3 p = float3(i.uv, 0.0);
+                float along = dot(p, sun);
+                float off = length(p - along * sun);
+                float shadow = along < 0.0 ? smoothstep(_PlanetRadius * 0.92, _PlanetRadius * 1.02, off) : 1.0;
+
+                // Brighter where the ice scatters light back toward the sun side.
+                float lit = 0.75 + 0.5 * saturate(dot(normalize(p + 0.0001), sun));
+                return fixed4(_Color.rgb * (0.85 + 1.0 * bands) * lit * lerp(0.06, 1.0, shadow), alpha);
             }
             ENDCG
         }

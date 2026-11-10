@@ -9,7 +9,7 @@ namespace TSAGame.EditorTools
     /// </summary>
     class ModelImportSettings : AssetPostprocessor
     {
-        public override uint GetVersion() => 4;
+        public override uint GetVersion() => 10;
 
         void OnPreprocessModel()
         {
@@ -27,7 +27,8 @@ namespace TSAGame.EditorTools
                 importer.materialImportMode = ModelImporterMaterialImportMode.None;
                 return;
             }
-            importer.importNormals = ModelImporterNormals.Calculate;
+            // Trees carry hand-made normals (leaves are lit as one soft crown), so keep them.
+            importer.importNormals = assetPath.Contains("/Tree_") ? ModelImporterNormals.Import : ModelImporterNormals.Calculate;
             importer.normalSmoothingAngle = assetPath.Contains("Title") ? 30f : 50f;
             importer.importCameras = false;
             importer.importLights = false;
@@ -49,7 +50,9 @@ namespace TSAGame.EditorTools
             }
             if (!assetPath.StartsWith("Assets/_Project/Textures/")) return;
             var importer = (TextureImporter)assetImporter;
-            if (assetPath.EndsWith("_n.png")) importer.textureType = TextureImporterType.NormalMap;
+            if (assetPath.Contains("Leaves") || assetPath.Contains("GrassTuft") || assetPath.Contains("Flowers") || assetPath.Contains("Skyline")) importer.alphaIsTransparency = true;
+            if (assetPath.Contains("Sky_")) { importer.maxTextureSize = 4096; importer.mipmapEnabled = false; }
+            if (assetPath.EndsWith("_n.png") || assetPath.Contains("NormalGL")) importer.textureType = TextureImporterType.NormalMap;
             if (assetPath.Contains("Nebula")) importer.alphaIsTransparency = true;
             importer.wrapMode = TextureWrapMode.Repeat;
             importer.anisoLevel = 8;
