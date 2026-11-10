@@ -9,6 +9,30 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/01_MissionControl.unity
     guid: 4508d0ac57c4e416c8783647f23bd450
   - enabled: 1
+    path: Assets/_Project/Scenes/02_Memory.unity
+    guid: bb2138b14e54a49d591757f2e304c77a
+  - enabled: 1
+    path: Assets/_Project/Scenes/03_Adrift.unity
+    guid: 0a38b28858a4047469588c268b8126af
+  - enabled: 1
+    path: Assets/_Project/Scenes/04_Cockpit.unity
+    guid: 7a658091380624a3c8c17896ab6056a2
+  - enabled: 1
+    path: Assets/_Project/Scenes/05_LandingSite.unity
+    guid: 5cb2cc5a7685e4101b64891d88a5dbe8
+  - enabled: 1
+    path: Assets/_Project/Scenes/06_FuelMoon.unity
+    guid: 9f54f078a3d944b6694c030a55946df1
+  - enabled: 1
+    path: Assets/_Project/Scenes/07_GateWorld.unity
+    guid: 6db01697f3f2340609fcc44d309cc89e
+  - enabled: 1
+    path: Assets/_Project/Scenes/08_Harvester.unity
+    guid: bd09a8a84c7724852a4a3a8ab9e8fdcb
+  - enabled: 1
+    path: Assets/_Project/Scenes/09_Control.unity
+    guid: 88a1b18efe01b40adae30485fa09d93b
+  - enabled: 1
     path: Assets/_Project/Scenes/02_Cockpit.unity
     guid: d7468245e53cf44d98046c15673624b6
   - enabled: 1
