@@ -26,6 +26,12 @@ namespace TSAGame
         [Tooltip("The engineer's animator: he holds the grip ball out in his hand and tosses it to the player.")]
         [SerializeField] PersonAnimator engineerPerson;
 
+        [Header("Practice range")]
+        [SerializeField] GripBall rangeBall;
+        [SerializeField] BallSurface[] rangeTargets;
+        [SerializeField] BallSurface rangeFrost;
+        [SerializeField] GameObject rangeMarker;
+
         [Header("Launch")]
         [SerializeField] Camera cutsceneCamera;
         [SerializeField] VhsFilter vhs;
@@ -61,6 +67,8 @@ namespace TSAGame
             foreach (var beacon in new[] { pumpBeacon, botanistBeacon, coreBeacon, liftBeacon }) beacon.SetActive(false);
             ballProp.SetActive(false);
             titleStage.SetActive(false);
+            rangeBall.enabled = false;
+            rangeMarker.SetActive(false);
 
             // Black. A voice calling him, closer each time. Then his eyes open.
             player.CanLook = false;
@@ -164,6 +172,7 @@ namespace TSAGame
             hud.SetObjective(null);
             state.AddXp(30, "Cargo loaded");
             yield return GripBallGift();
+            yield return PracticeRange();
 
             lift.SetPrompt("Board the rocket");
             hud.SetObjective("Board the rocket");
@@ -201,6 +210,48 @@ namespace TSAGame
                 yield return Dialogue.Say(Speakers.Quartermaster, "You don't outrank a locked cabinet. No.");
             else
                 yield return Dialogue.Say(Speakers.Quartermaster, "Appreciate that. Fly safe.");
+        }
+
+        /// <summary>
+        /// The tutorial for the whole game's puzzle tool. Three targets, each teaching one rule of the grip ball:
+        /// a straight throw, a loose object the ball knocks away, and a target that can only be reached by banking
+        /// the ball off a frost plate.
+        /// </summary>
+        IEnumerator PracticeRange()
+        {
+            var hud = HUD.Instance;
+            var state = GameState.Instance;
+            yield return Dialogue.Play(
+                (Speakers.Engineer, "You're not going up until I've seen you use it. The practice range is just east of the pad."),
+                (Speakers.Engineer, "Three targets. One you can hit straight. One is loose, so knock it off its post. The last one you can't see from the line."),
+                (Speakers.Engineer, "That pale plate is frost glaze. Nothing grips frost. The ball skips off it like a stone off water. Use that."));
+            rangeMarker.SetActive(true);
+            rangeBall.enabled = true;
+            rangeBall.TakeOut();
+            bool saidBank = false;
+            int bounces = 0;
+            rangeBall.Bounced += () => bounces++;
+            while (true)
+            {
+                int hit = 0;
+                foreach (var target in rangeTargets) if (target.WasHit) hit++;
+                hud.SetObjective($"Practice range: hit all three targets ({hit}/3)\nLEFT MOUSE  throw   •   R  call the ball back\nFrost plates bounce the ball. Loose things get knocked away.");
+                if (hit >= rangeTargets.Length) break;
+                if (bounces > 0 && !saidBank && !Dialogue.IsPlaying)
+                {
+                    saidBank = true;
+                    StartCoroutine(Dialogue.Say(Speakers.Engineer, "There. See how it came off the frost? Same angle out as in. Move along the line until it lines up."));
+                }
+                yield return null;
+            }
+            rangeMarker.SetActive(false);
+            rangeBall.PutAway();
+            rangeBall.enabled = false;
+            state.AddXp(40, "Range cleared");
+            if (bounces <= 2) state.AddXp(15, "Clean bank shot");
+            yield return Dialogue.Play(
+                (Speakers.Engineer, "Grip, knock, bank. That's all it does, and it's all you'll need."),
+                (Speakers.Commander, "Let's hope so."));
         }
 
         IEnumerator Seeds()

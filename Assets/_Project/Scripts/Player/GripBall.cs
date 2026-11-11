@@ -42,15 +42,22 @@ namespace TSAGame
         public event Action Gripped;
         /// <summary>The player reeled all the way in and grabbed on.</summary>
         public event Action Arrived;
+        /// <summary>The ball skipped off a frost surface.</summary>
+        public event Action Bounced;
+
+        int bounces;
+        float stuckFor;
 
         Vector3 velocity;
         float travelled, swing, slack;
 
         // Key poses of the throw, relative to where the hand rests (right, up, forward) and as turns of the hand.
         const float ThrowSeconds = 1.6f, WindUpEnd = 0.26f, WhipEnd = 0.34f, FollowEnd = 0.72f;
-        static readonly Vector3 WindUpReach = new(0.03f, 0.03f, -0.15f), ThrowReach = new(0.05f, -0.07f, 0.3f);
-        static readonly Quaternion HoldTurn = Quaternion.Euler(-18f, -12f, 8f), WindUpTurn = Quaternion.Euler(-38f, -4f, 10f),
-            ThrowTurn = Quaternion.Euler(58f, -8f, 32f);      // arm laid forward into the view, leaning in from the lower right
+        static readonly Vector3 WindUpReach = new(0.02f, -0.03f, -0.1f), ThrowReach = new(-0.04f, -0.03f, 0.13f);     // a short push: the sleeve end must stay out of view
+        static readonly Quaternion HoldTurn = Quaternion.Euler(-18f, -12f, 8f), WindUpTurn = Quaternion.Euler(-22f, -12f, 8f),
+            ThrowTurn = Quaternion.Euler(-11f, -13f, 8f);      // palm tips forward as the ball rolls off the fingers
+        // Where the ball sits in the open palm (set by hand in the editor).
+        static readonly Vector3 BallInHand = new(-0.079f, 0.099f, 0.077f);
         Vector3 handReach;
         Quaternion handTurn = Quaternion.Euler(-18f, -12f, 8f);
         Light pulse;
@@ -69,11 +76,22 @@ namespace TSAGame
             pulse.range = 9f;
             pulse.intensity = 0f;
             ball.gameObject.SetActive(false);
-            tether.enabled = false;
+            if (tether != null) tether.enabled = false;
             if (hand != null) hand.gameObject.SetActive(false);
         }
 
         void OnDisable() => StopReel();
+
+        /// <summary>Puts the ball and the hand away again.</summary>
+        public void PutAway()
+        {
+            StopReel();
+            ball.SetParent(null, true);
+            ball.gameObject.SetActive(false);
+            if (hand != null) hand.gameObject.SetActive(false);
+            Current = State.Pocket;
+            HUD.Instance?.SetPrompt(null);
+        }
 
         public void TakeOut()
         {
@@ -114,14 +132,14 @@ namespace TSAGame
                 {
                     float a = (p - WindUpEnd) / (WhipEnd - WindUpEnd);
                     a = 1f - (1f - a) * (1f - a);                       // fastest at the start of the snap
-                    reach = Vector3.Lerp(WindUpReach, ThrowReach, a) + Vector3.up * (Mathf.Sin(a * Mathf.PI) * 0.06f);
+                    reach = Vector3.Lerp(WindUpReach, ThrowReach, a) + Vector3.up * (Mathf.Sin(a * Mathf.PI) * 0.015f);
                     turn = Quaternion.Slerp(WindUpTurn, ThrowTurn, a);
                     if (a > 0.55f && Current == State.Held) Release();
                 }
                 else if (p < FollowEnd)
                 {
                     float settle = Mathf.Exp(-(p - WhipEnd) * 18f) * 0.03f;       // a tiny overshoot that dies away
-                    reach = ThrowReach + new Vector3(0f, settle, settle);
+                    reach = ThrowReach + new Vector3(0f, 0f, settle);
                     turn = ThrowTurn;
                     if (Current == State.Held) Release();
                 }
@@ -139,7 +157,7 @@ namespace TSAGame
                 reach = new Vector3(0f, -0.35f * Mathf.SmoothStep(0f, 1f, swing), 0f)
                       + new Vector3(Mathf.Sin(Time.time * 0.9f) * 0.004f, Mathf.Sin(Time.time * 1.3f) * 0.006f, 0f);
                 // Pulling yourself in: the arm reaches toward the ball and hauls.
-                if (reeling) { reach += new Vector3(-0.06f, 0.1f, 0.18f + Mathf.Sin(Time.time * 9f) * 0.02f); turn = ThrowTurn; }
+                if (reeling) reach += new Vector3(-0.03f, -0.02f, 0.08f + Mathf.Sin(Time.time * 9f) * 0.015f);
             }
             handReach = Vector3.Lerp(handReach, reach, 1f - Mathf.Exp(-(throwing ? 60f : 10f) * Time.deltaTime));
             handTurn = Quaternion.Slerp(handTurn, turn, 1f - Mathf.Exp(-(throwing ? 60f : 10f) * Time.deltaTime));
@@ -150,7 +168,7 @@ namespace TSAGame
             switch (Current)
             {
                 case State.Held:
-                    if (hand != null) ball.SetPositionAndRotation(hand.TransformPoint(new Vector3(0.02f, -0.04f, 0.14f)), hand.rotation);
+                    if (hand != null) ball.SetPositionAndRotation(hand.TransformPoint(BallInHand), hand.rotation);
                     else ball.SetPositionAndRotation(HoldPoint, view.transform.rotation);
                     if (canAct && !throwing && GameInput.Throw.WasPressedThisFrame()) Throw();
                     break;
@@ -163,6 +181,13 @@ namespace TSAGame
                 case State.Stuck:
                     // The same button throws and pulls; it has to be let go once after the throw before it pulls.
                     if (!GameInput.Pull.IsPressed()) pullArmed = true;
+                    if (player == null)
+                    {
+                        // On the ground there is nothing to pull yourself along: the ball just comes back.
+                        stuckFor += Time.deltaTime;
+                        if (stuckFor > 0.9f || (pullArmed && GameInput.Pull.IsPressed())) Return();
+                        break;
+                    }
                     Reel(canAct && pullArmed && GameInput.Pull.IsPressed());
                     if (canAct && GameInput.Recall.WasPressedThisFrame()) Return();
                     break;
@@ -178,7 +203,7 @@ namespace TSAGame
             }
 
             // No visible line. Once the ball has a grip it pulses with light to say "pull me".
-            tether.enabled = false;
+            if (tether != null) tether.enabled = false;
             if (pulse != null)
                 pulse.intensity = Current == State.Stuck && !reeling ? 2.5f + 2.5f * Mathf.Sin(Time.time * 7f) : Current == State.Stuck ? 5f : 0f;
             ball.localScale = baseScale * (Current == State.Stuck && !reeling ? 1f + 0.18f * Mathf.Max(0f, Mathf.Sin(Time.time * 7f)) : 1f);
@@ -201,13 +226,19 @@ namespace TSAGame
             var direction = view.transform.forward;
             ball.SetParent(null, true);
             // Leaves from the glove, but is aimed so it still flies to the middle of the screen.
-            ball.position = hand != null ? hand.TransformPoint(new Vector3(0.02f, -0.04f, 0.14f)) : view.transform.position + direction * 0.7f;
+            ball.position = hand != null ? hand.TransformPoint(BallInHand) : view.transform.position + direction * 0.7f;
             var aim = view.transform.position + direction * Mathf.Min(Range, 40f);
             // A forgiving aim: a throw that passes within half a metre of a rock still goes to it.
             if (Physics.SphereCast(view.transform.position, 0.5f, direction, out var target, Range, surfaces, QueryTriggerInteraction.Ignore)) aim = target.point;
             direction = (aim - ball.position).normalized;
-            velocity = direction * throwSpeed + player.Body.linearVelocity;
-            player.Body.linearVelocity -= direction * recoil;      // every throw pushes you back a little
+            velocity = direction * throwSpeed;
+            if (player != null)
+            {
+                velocity += player.Body.linearVelocity;
+                player.Body.linearVelocity -= direction * recoil;      // every throw pushes you back a little
+            }
+            bounces = 0;
+            stuckFor = 0f;
             travelled = 0f;
             Throws++;
             Current = State.Flying;
@@ -218,6 +249,32 @@ namespace TSAGame
             var step = velocity * Time.deltaTime;
             if (Physics.SphereCast(ball.position, 0.08f, step.normalized, out var hit, step.magnitude, surfaces, QueryTriggerInteraction.Ignore))
             {
+                var surface = hit.collider.GetComponentInParent<BallSurface>();
+                var kind = surface != null ? surface.Type : BallSurface.Kind.Grip;
+                if (kind == BallSurface.Kind.Frost && bounces < 4)
+                {
+                    // Frost: no grip. The ball skips off at the mirror angle and keeps going.
+                    velocity = Vector3.Reflect(velocity, hit.normal);
+                    ball.position = hit.point + hit.normal * 0.12f;
+                    bounces++;
+                    travelled *= 0.5f;
+                    AudioManager.Play(Sfx.Ricochet, 0.8f, 0.1f);
+                    Bounced?.Invoke();
+                    return;
+                }
+                if (kind == BallSurface.Kind.Loose || kind == BallSurface.Kind.Target)
+                {
+                    // Nothing to hold on to: the hit does its work and the ball comes back.
+                    surface.Strike(velocity, hit.point);
+                    AudioManager.Play(Sfx.Clank, 0.8f, 0.1f);
+                    if (impactDust != null)
+                    {
+                        impactDust.transform.SetPositionAndRotation(hit.point, Quaternion.LookRotation(hit.normal));
+                        impactDust.Play();
+                    }
+                    Return();
+                    return;
+                }
                 ball.position = hit.point + hit.normal * 0.05f;
                 ball.SetParent(hit.transform, true);
                 Current = State.Stuck;
@@ -297,9 +354,12 @@ namespace TSAGame
             {
                 case State.Held:
                     bool target = Physics.SphereCast(view.transform.position, 0.5f, view.transform.forward, out var hit, Range, surfaces, QueryTriggerInteraction.Ignore);
-                    string push = player.NearSurface ? "\n[Space] Push off" : "";
+                    string push = player != null && player.NearSurface ? "\n[Space] Push off" : "";
                     string bonus = Has(Stat.Navigation) ? "  •  NAVIGATION 3: +30% range" : "";
                     hud.SetPrompt((target ? $"[Left mouse] Throw  •  {hit.distance:0} m{bonus}" : "Out of range: aim at something closer") + push);
+                    break;
+                case State.Stuck when player == null:
+                    hud.SetPrompt(null);
                     break;
                 case State.Stuck:
                     hud.SetPrompt("Hold [Left mouse] to pull yourself in   •   [R] recall" + (Has(Stat.Engineering) ? "\nENGINEERING 3: faster pull" : ""));

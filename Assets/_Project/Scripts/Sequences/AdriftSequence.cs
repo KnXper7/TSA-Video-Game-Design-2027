@@ -16,6 +16,9 @@ namespace TSAGame
         [SerializeField] CameraShake playerShake;
         [SerializeField] Transform hatch;
         [SerializeField] float hatchReach = 3.5f;
+        [Tooltip("Loose debris wedged against the hatch. It has to be knocked clear with the ball before you can get in.")]
+        [SerializeField] BallSurface hatchBlocker;
+        [SerializeField] float blockerClearDistance = 6.5f;
         [Tooltip("Drifting further than this from the hatch counts as lost.")]
         [SerializeField] float maxDistance = 260f;
 
@@ -105,6 +108,8 @@ namespace TSAGame
             oxygen.Depleted += () => failed = true;
             ball.Gripped += () => gripped = true;
             ball.Arrived += () => arrived = true;
+            bool bounced = false, saidFrost = false, saidBlocked = false, saidCleared = false;
+            ball.Bounced += () => bounced = true;
 
             while (true)
             {
@@ -113,7 +118,24 @@ namespace TSAGame
                 // Everything is heard from inside the helmet: as the air runs low, the breathing gets faster and louder.
                 float panic = 1f - Mathf.Clamp01(oxygen.Normalized * 1.6f);
                 AudioManager.SetLoop("ambience", Mathf.Lerp(0.5f, 0.95f, panic), Mathf.Lerp(1f, 1.7f, panic));
-                if (distance < hatchReach) break;
+                bool blocked = hatchBlocker != null && Vector3.Distance(hatchBlocker.transform.position, hatch.position) < blockerClearDistance;
+                if (distance < hatchReach && !blocked) break;
+                if (bounced && !saidFrost && !Dialogue.IsPlaying)
+                {
+                    saidFrost = true;
+                    StartCoroutine(Dialogue.Say(Speakers.ShipAI, "That rock is glazed with frost. The ball cannot bite into it. It will only skip off."));
+                }
+                if (blocked && distance < 45f && !saidBlocked && !Dialogue.IsPlaying)
+                {
+                    saidBlocked = true;
+                    StartCoroutine(Dialogue.Say(Speakers.ShipAI, "Debris is wedged against the hatch. It is loose. Knock it clear with the ball."));
+                }
+                if (!blocked && saidBlocked && !saidCleared && !Dialogue.IsPlaying)
+                {
+                    saidCleared = true;
+                    state.AddXp(25, "Hatch cleared");
+                    StartCoroutine(Dialogue.Say(Speakers.ShipAI, "Hatch is clear. Come home."));
+                }
                 if (failed || distance > maxDistance)
                 {
                     yield return Fail();

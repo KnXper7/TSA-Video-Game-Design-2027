@@ -4,7 +4,7 @@ Press **Play** in `Scenes/01_MissionControl`. The game starts at the main menu a
 
 | Scene | Story | What the player does | Main script |
 | --- | --- | --- | --- |
-| `01_MissionControl` | Menu + prologue | Main menu (Play, Options, Save, Load). Play slides in the black bars and the rocket flies past; Mission Control watches the portal appear and swallow it | `MainMenu`, `CutsceneDirector` |
+| `01_MissionControl` | Menu + prologue | Main menu (title, Play, Options). Play slides in the black bars and the rocket flies past; Mission Control watches the portal appear and swallow it | `MainMenu`, `CutsceneDirector` |
 | `02_Memory` | Flashback | Launch day on a dying Earth: talk to people, collect the water ration, seed vault and guidance core, receive the grip ball, board. Launch plays as 1990s home video, then the 3D title flies in | `MemorySequence` |
 | `03_Adrift` | Act I | The rocket hits a rock; the pilot wakes up floating outside. Throw the grip ball from rock to rock to reach the hatch before the air runs out | `AdriftSequence`, `GripBall` |
 | `04_Cockpit` | Act I | Power puzzle, the planet that is not Earth, crash landing | `CockpitSequence` |
@@ -20,7 +20,7 @@ You can press Play in any scene from 02 on to test it by itself; the later chapt
 
 ## Menu, saving and options
 
-- The game **autosaves** whenever a chapter starts. **Save** on the menu keeps that progress in the save slot; **Load** continues from it. (`Scripts/Core/SaveSystem.cs`; stored in PlayerPrefs.)
+- The game still **autosaves** whenever a chapter starts (`Scripts/Core/SaveSystem.cs`; stored in PlayerPrefs), but the menu no longer has Save or Load buttons, so there is currently no way to continue a saved game: Play always starts a new one.
 - **Options** has four volume sliders, remembered between sessions.
 - Fonts: **Michroma** for titles and **Rajdhani** for everything else (both from Google Fonts, SIL Open Font License; the licence files sit next to them in `Resources/Fonts/`). Change them in `UIFactory.DefaultFont` / `TitleFont`.
 
@@ -33,6 +33,17 @@ You can press Play in any scene from 02 on to test it by itself; the later chapt
 | Navigation 3 | 30% longer throw |
 | Engineering 3 | Faster reel |
 | Survival | Suit air lasts longer |
+
+### Ball puzzles (`BallSurface`)
+
+Every puzzle is built from what the ball does when it hits something. Add a `BallSurface` component to any object with a collider:
+
+- **Grip** (the default, no component needed): the ball bites in and you can pull yourself to it.
+- **Frost** (pale blue glaze): nothing grips it. The ball skips off at the mirror angle, up to 4 times. Bank shots round corners; also a rock you can't use as a stepping stone.
+- **Loose** (needs a Rigidbody): the ball can't hold it, but the hit shoves it away. Clear a path.
+- **Target**: a switch. `WasHit` / `Hit` tell a sequence it was struck.
+
+Level 1 (practice range, east of the pad) teaches all three. Level 2 uses frost rocks on the route and loose debris wedged on the hatch.
 
 ## RPG systems
 
@@ -78,6 +89,7 @@ From the event guide (`HS - Video Game Design`): the game must be **playable in 
 - `Models/People/Astronaut.fbx` and `AstronautGlove.fbx`: made with Higgsfield (Meshy text-to-3D), converted by `Tools/blender/import_generated.py`.
 - `Models/People/*` (other characters): MakeHuman / MPFB, CC0.
 - Fonts: Michroma and Rajdhani, SIL Open Font License.
+- `Resources/Sfx/*.wav`: music (`pad_tense`, `pad_calm`, `pad_mystery`, `pad_dark`, made with Higgsfield / ElevenLabs Music) and sound effects (`rocket_roar`, `explosion`, `clank`, `throw`, `whoosh`, `portal_open`, `wind`, `ricochet`, made with Higgsfield / Mirelo). A file here replaces the synthesized sound of the same name; delete it to go back.
 - `Docs/Targets/*`: realistic target images (Higgsfield GPT Image) and `glove_throw_seedance.mp4` (Higgsfield Seedance), used only as references for art and animation.
 - `Textures/PBR/*`: surface textures from ambientCG, CC0.
 - Voices: macOS text-to-speech placeholders (replace with team recordings).

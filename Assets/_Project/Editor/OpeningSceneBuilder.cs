@@ -383,7 +383,7 @@ namespace TSAGame.EditorTools
 
             // Dead trees
             var trees = new GameObject("Dead Trees").transform;
-            Vector3[] keepClear = { pad, new Vector3(2, 0, 22), new Vector3(-24, 0, 44), new Vector3(-30, 0, 14), new Vector3(34, 0, 30), new Vector3(46, 0, -24) };
+            Vector3[] keepClear = { pad, new Vector3(2, 0, 22), new Vector3(-24, 0, 44), new Vector3(-30, 0, 14), new Vector3(34, 0, 30), new Vector3(46, 0, -24), new Vector3(23, 0, 56) };
             for (int i = 0; i < 90; i++)
             {
                 var p = new Vector3(Range(random, -190, 190), 0, Range(random, -120, 210));
@@ -519,6 +519,41 @@ namespace TSAGame.EditorTools
 
             // ---- Player ----
             var (player, playerCam) = Player(new Vector3(2, 0, 22), 1.65f, seatedYawLimit: 0f);
+            // ---- Practice range: the grip ball tutorial (targets behind a rail the player can't cross) ----
+            var range = new GameObject("Practice Range").transform;
+            Wall(range, new Vector3(23, 2, 51), new Vector3(20, 4, 0.3f));
+            Wall(range, new Vector3(23, 2, 67), new Vector3(20, 4, 0.3f));
+            Wall(range, new Vector3(13, 2, 59), new Vector3(0.3f, 4, 16));
+            Wall(range, new Vector3(33, 2, 59), new Vector3(0.3f, 4, 16));
+            Prim(PrimitiveType.Cube, "Rail", range, new Vector3(23, 1f, 51), new Vector3(20, 0.08f, 0.08f), mm["Crate_Trim"], collider: false);
+            for (int i = 0; i <= 10; i++)
+                Prim(PrimitiveType.Cube, "Rail Post", range, new Vector3(13 + i * 2f, 0.5f, 51), new Vector3(0.1f, 1f, 0.1f), mm["Crate_Trim"], collider: false);
+            var rangeSign = WorldText("Range Sign", range, new Vector3(23, 2.3f, 51), new Vector2(900, 120), 0.004f, 60, new Color(1f, 0.8f, 0.5f));
+            rangeSign.transform.parent.rotation = Quaternion.Euler(0, 0, 0);
+            rangeSign.text = "PRACTICE RANGE";
+            // 1: a straight shot
+            Prim(PrimitiveType.Cube, "Target Post", range, new Vector3(27, 0.5f, 63.2f), new Vector3(0.15f, 1f, 0.15f), mm["Tower_Steel"], collider: false);
+            var target1 = Surface(Prim(PrimitiveType.Cube, "MODEL_Target_Straight", range, new Vector3(27, 1.7f, 63), new Vector3(1.6f, 1.6f, 0.15f), mm["Range_Target"]), BallSurface.Kind.Target);
+            // 2: a loose crate on a post, to knock off
+            Prim(PrimitiveType.Cube, "Crate Post", range, new Vector3(30.5f, 0.6f, 58), new Vector3(0.5f, 1.2f, 0.5f), mm["Tower_Concrete"]);
+            var looseSlot = Slot("Target_Loose", range, new Vector3(30.5f, 1.21f, 58), Vector3.zero);
+            Model("Crate", looseSlot, Vector3.zero, Quaternion.identity, 1f, new() { ["Crate_Light"] = mm["Range_Target"] });
+            var looseBox = looseSlot.gameObject.AddComponent<BoxCollider>();
+            looseBox.center = new Vector3(0, 0.25f, 0);
+            looseBox.size = new Vector3(0.9f, 0.5f, 0.6f);
+            looseSlot.gameObject.AddComponent<Rigidbody>().mass = 6f;
+            var target2 = Surface(looseSlot.gameObject, BallSurface.Kind.Loose);
+            // 3: hidden behind a wall; only a throw banked off the frost plate reaches it
+            Prim(PrimitiveType.Cube, "Blind Wall", range, new Vector3(16.25f, 1.6f, 58.6f), new Vector3(5.5f, 3.2f, 0.3f), mm["Tower_Concrete"]);
+            Prim(PrimitiveType.Cube, "Blind Wall Back", range, new Vector3(13.9f, 1.6f, 60.5f), new Vector3(0.3f, 3.2f, 4.1f), mm["Tower_Concrete"]);
+            Prim(PrimitiveType.Cube, "Blind Wall Far", range, new Vector3(16.25f, 1.6f, 62.4f), new Vector3(5.5f, 3.2f, 0.3f), mm["Tower_Concrete"]);
+            var target3 = Surface(Prim(PrimitiveType.Cube, "MODEL_Target_Banked", range, new Vector3(14.5f, 1.7f, 60.5f), new Vector3(0.15f, 2f, 2.6f), mm["Range_Target"]), BallSurface.Kind.Target);
+            Prim(PrimitiveType.Cube, "Frost Post", range, new Vector3(21, 0.3f, 60.5f), new Vector3(0.2f, 0.6f, 0.2f), mm["Tower_Steel"], collider: false);
+            var frostPlate = Surface(Prim(PrimitiveType.Cube, "MODEL_FrostPlate", range, new Vector3(21, 1.8f, 60.5f), new Vector3(2.8f, 2.8f, 0.15f), mm["Frost_Glaze"],
+                Quaternion.Euler(0, 45, 0)), BallSurface.Kind.Frost);
+            var rangeMarker = Beacon(new Vector3(23, 0, 49.5f), m);
+            var rangeBall = GripRig(playerCam, null);
+
             // Grit blowing across the dry ground, carried along with the player
             Motes(playerCam.transform, new Vector3(0, 0, 6), new Vector3(40, 8, 40), 500, new Color(0.9f, 0.75f, 0.55f, 0.55f), 0.06f, 0.4f, false, new Vector3(3.5f, 0.1f, 1f));
 
@@ -553,7 +588,8 @@ namespace TSAGame.EditorTools
                 ("coreBeacon", coreBeacon), ("liftBeacon", liftBeacon), ("seedCase", seedCase.gameObject), ("ballProp", ballSlot.gameObject),
                 ("cutsceneCamera", cutsceneCam), ("vhs", vhs), ("rocket", rocket), ("rocketCentre", rocketCentre), ("plumes", plumes),
                 ("padSmoke", padSmoke), ("launchLight", launchLight), ("wideShot", wide), ("lowShot", low), ("titleShot", titleShot), ("title", title), ("titleStage", stageRoot.gameObject),
-                ("engineerPerson", engineerSlot.GetComponentInChildren<PersonAnimator>()));
+                ("engineerPerson", engineerSlot.GetComponentInChildren<PersonAnimator>()), ("rangeBall", rangeBall),
+                ("rangeTargets", new Object[] { target1, target2, target3 }), ("rangeFrost", frostPlate), ("rangeMarker", rangeMarker));
 
             AddHud();
             Save(scene, SceneFlow.Memory);
@@ -565,11 +601,16 @@ namespace TSAGame.EditorTools
 
         static void BuildAdrift(Mats m, VolumeProfile post)
         {
-            var scene = NewScene(SpacePostProfile(), ambient: new Color(0.08f, 0.095f, 0.14f), skybox: false);
-            var sun = Sun(Quaternion.Euler(22f, 24f, 0f), 2.1f);
-            sun.color = new Color(0.85f, 0.92f, 1f);
+            var scene = NewScene(SpacePostProfile(), ambient: new Color(0.06f, 0.068f, 0.085f), skybox: false);
+            // Lit like the title scene: a blue-white star as the key, the same star from further round as a side
+            // light that picks out edges, a soft neutral fill so shadowed faces keep their detail, and here a
+            // blue-green glow coming up off the ocean world below.
+            var sun = Sun(Quaternion.Euler(22f, 24f, 0f), 3.2f);
+            sun.color = new Color(0.78f, 0.88f, 1f);
             SunFlare(sun);
-            RimLight(Quaternion.Euler(-15f, 200f, 0f), new Color(0.45f, 0.6f, 1f), 0.5f);
+            RimLight(Quaternion.Euler(24f, 70f, 0f), new Color(0.72f, 0.86f, 1f), 1.1f).name = "Star Side Light";
+            RimLight(Quaternion.Euler(10f, 190f, 0f), new Color(0.7f, 0.78f, 0.92f), 0.4f).name = "Fill Light";
+            RimLight(Quaternion.LookRotation(-new Vector3(-500, -620, 1300)), new Color(0.35f, 0.65f, 1f), 0.45f).name = "Planet Bounce";
             var random = new System.Random(9);
 
             var outside = new GameObject("Space").transform;
@@ -639,7 +680,26 @@ namespace TSAGame.EditorTools
                          (new Vector3(-20, -8, 40), 5f), (new Vector3(22, 4, 62), 4f), (new Vector3(-14, 14, 96), 5f), (new Vector3(28, -6, 100), 5f),
                          (new Vector3(0, -10, 14), 3f), (new Vector3(16, 8, 20), 3f),
                      })
-                Asteroid(rocks, random, p, s, collider: true, spin: false);
+            {
+                var pathRock = Asteroid(rocks, random, p, s, collider: true, spin: false);
+                // Two of the stepping stones are glazed with frost: the ball skips off them, so the route has to go round.
+                if (p == new Vector3(9, -3, 44) || p == new Vector3(10, 10, 88))
+                {
+                    foreach (var r in pathRock.GetComponentsInChildren<Renderer>()) r.sharedMaterial = ModelMats["Frost_Glaze"];
+                    Surface(pathRock, BallSurface.Kind.Frost);
+                    pathRock.name = "MODEL_FrostRock";
+                }
+            }
+            // Loose debris wedged against the hatch: it has to be knocked clear before you can get in.
+            var blockerRock = Asteroid(rocks, random, hatch.position - rocket.right * 3.4f, 2f, collider: false, spin: false);
+            blockerRock.name = "MODEL_HatchDebris";
+            blockerRock.AddComponent<SphereCollider>().radius = 1.05f;
+            var blockerBody = blockerRock.AddComponent<Rigidbody>();
+            blockerBody.useGravity = false;
+            blockerBody.mass = 400f;
+            blockerBody.linearDamping = 0.15f;
+            var hatchBlocker = Surface(blockerRock, BallSurface.Kind.Loose);
+            Set(hatchBlocker, ("awayFrom", rocket));
             for (int i = 0; i < 70; i++)
             {
                 var p = new Vector3(Range(random, -1, 1), Range(random, -0.5f, 0.5f), Range(random, -1, 1)).normalized * Range(random, 170, 700);
@@ -669,31 +729,14 @@ namespace TSAGame.EditorTools
             var oxygen = player.AddComponent<OxygenSystem>();
             Set(oxygen, ("baseDrainPerSecond", 0.42f));
 
-            var ballSlot = Slot("GripBall", null, Vector3.zero, Vector3.zero);
-            Model("GripBall", ballSlot, Vector3.zero, Quaternion.identity, 0.6f);
-            var tetherObject = new GameObject("Tether");
-            var tether = tetherObject.AddComponent<LineRenderer>();
-            tether.sharedMaterial = ModelMats["Tether_Cable"];
-            tether.positionCount = 16;
-            tether.widthMultiplier = 0.006f;
-            tether.numCapVertices = 2;
-            tether.shadowCastingMode = ShadowCastingMode.Off;
-            var ball = new GameObject("Grip Ball Controller").AddComponent<GripBall>();
-            // The player's own suit glove (an AI-generated model, see Tools/blender/import_generated.py).
-            // It is turned so the fingers point forward and the palm faces up, cupping the ball.
-            var gloveSlot = Slot("PlayerHand", null, Vector3.zero, Vector3.zero);
-            var glove = (GameObject)PrefabUtility.InstantiatePrefab(PersonPrefab("AstronautGlove", animated: false), gloveSlot);
-            glove.transform.localRotation = Quaternion.Euler(0, 0, 90) * Quaternion.Euler(0, 90, 0);
-            glove.transform.localPosition = new Vector3(0, -0.07f, -0.1f);
-            var impactDust = DustBurst("Grip Impact Dust", null, Vector3.zero, new Color(0.62f, 0.58f, 0.54f), 26, 0.12f, 3.5f);
-            Set(ball, ("player", zeroG), ("view", cam), ("ball", ballSlot), ("tether", tether), ("hand", gloveSlot), ("impactDust", impactDust));
+            var ball = GripRig(cam, zeroG);
             Motes(cam.transform, Vector3.zero, new Vector3(30, 30, 30), 160, new Color(0.8f, 0.85f, 1f, 0.5f), 0.015f, 0.05f, false);
 
             var sequence = new GameObject("Adrift Sequence").AddComponent<AdriftSequence>();
             Set(sequence, ("player", zeroG), ("ball", ball), ("oxygen", oxygen), ("playerShake", shake), ("hatch", hatch),
                 ("cutsceneCamera", cutsceneCam), ("impactShot", impactShot), ("rocket", rocket), ("rocketFlyStart", rocketFlyStart),
                 ("rocketRest", rocketRest), ("rock", rockSlot), ("rockStart", rockStart), ("rockRest", rockRest),
-                ("plumes", new Object[] { plume }), ("debrisBurst", burst), ("damageEffects", damage.gameObject));
+                ("plumes", new Object[] { plume }), ("debrisBurst", burst), ("damageEffects", damage.gameObject), ("hatchBlocker", hatchBlocker));
 
             AddHud();
             Save(scene, SceneFlow.Adrift);
@@ -704,6 +747,44 @@ namespace TSAGame.EditorTools
         // =====================================================================
 
         static float Range(System.Random random, float min, float max) => min + (float)random.NextDouble() * (max - min);
+
+        /// <summary>The grip ball, the player's glove and the controller that runs them. zeroG is null on the ground.</summary>
+        static GripBall GripRig(Camera cam, ZeroGPlayer zeroG)
+        {
+            var ballSlot = Slot("GripBall", null, Vector3.zero, Vector3.zero);
+            Model("GripBall", ballSlot, Vector3.zero, Quaternion.identity, 0.6f);
+            var ball = new GameObject("Grip Ball Controller").AddComponent<GripBall>();
+            // The player's own suit glove (an AI-generated model, see Tools/blender/import_generated.py).
+            var gloveSlot = Slot("PlayerHand", null, Vector3.zero, Vector3.zero);
+            var glove = (GameObject)PrefabUtility.InstantiatePrefab(PersonPrefab("AstronautGlove", animated: false), gloveSlot);
+            glove.transform.localRotation = Quaternion.Euler(0, 0, 90) * Quaternion.Euler(0, 90, 0);
+            glove.transform.localPosition = new Vector3(0, -0.07f, -0.1f);
+            // The open, palm-up pose the hand was given by eye in the editor.
+            var gloveMesh = glove.transform.Find("Model");
+            gloveMesh.localPosition = new Vector3(0.001f, 0.154f, 0.166f);
+            gloveMesh.localRotation = Quaternion.Euler(67.678f, -222.57f, 65.762f);
+            gloveMesh.localScale = new Vector3(0.263f, 0.263f, -0.263f);
+            var impactDust = DustBurst("Grip Impact Dust", null, Vector3.zero, new Color(0.62f, 0.58f, 0.54f), 26, 0.12f, 3.5f);
+            Set(ball, ("view", cam), ("ball", ballSlot), ("hand", gloveSlot), ("impactDust", impactDust));
+            if (zeroG != null) Set(ball, ("player", zeroG));
+            return ball;
+        }
+
+        /// <summary>Marks an object as a puzzle surface for the grip ball (see BallSurface).</summary>
+        static BallSurface Surface(GameObject go, BallSurface.Kind kind)
+        {
+            var surface = go.AddComponent<BallSurface>();
+            Set(surface, ("kind", (int)kind));
+            return surface;
+        }
+
+        static void Wall(Transform parent, Vector3 centre, Vector3 size)
+        {
+            var go = new GameObject("Range Barrier") { layer = 2 };        // stops the player, lets the ball through
+            go.transform.SetParent(parent, false);
+            go.transform.position = centre;
+            go.AddComponent<BoxCollider>().size = size;
+        }
 
         /// <summary>Drops a model from Assets/_Project/Models into the scene and gives it the project's materials.</summary>
         static GameObject Model(string file, Transform parent, Vector3 localPosition, Quaternion localRotation, float scale,
@@ -1150,6 +1231,23 @@ namespace TSAGame.EditorTools
                 gasGiant.SetColor("_EmissionColor", Color.white * 0.12f);
                 freshAssets.Remove(gasGiant);      // keep the generic planet setup below from replacing it
             }
+            // The ocean world gets the same treatment as Planet X: a detailed surface picture, no shadow banding,
+            // and a faint glow so the night side still shows its clouds. Applied once, when the picture changes.
+            var oceanWorld = AssetDatabase.LoadAssetAtPath<Material>($"{MaterialsDir}/Planet_NotEarth.mat");
+            var oceanMap = Generated("NotEarth_Surface");
+            if (oceanWorld != null && oceanMap != null && oceanWorld.GetTexture("_BaseMap") != oceanMap)
+            {
+                oceanWorld.SetColor("_BaseColor", Color.white);
+                oceanWorld.SetTexture("_BaseMap", oceanMap);
+                oceanWorld.SetFloat("_Smoothness", 0.45f);
+                oceanWorld.SetFloat("_ReceiveShadows", 0f);
+                oceanWorld.EnableKeyword("_RECEIVE_SHADOWS_OFF");
+                oceanWorld.EnableKeyword("_EMISSION");
+                oceanWorld.SetTexture("_EmissionMap", oceanMap);
+                oceanWorld.SetColor("_EmissionColor", Color.white * 0.1f);
+                EditorUtility.SetDirty(oceanWorld);
+                freshAssets.Remove(oceanWorld);
+            }
             foreach (var (planetMat, texture) in new[] { ("Planet_X", "PlanetX"), ("Planet_NotEarth", "NotEarth") })
             {
                 var planetMaterial = AssetDatabase.LoadAssetAtPath<Material>($"{MaterialsDir}/{planetMat}.mat");
@@ -1223,6 +1321,8 @@ namespace TSAGame.EditorTools
                 ["Tether_Cable"] = Mat("Tether_Cable", new Color(0.55f, 0.57f, 0.6f), 0.7f, metallic: 0.9f),
                 ["Container_Rust"] = Textured(Mat("Container_Rust", new Color(0.85f, 0.8f, 0.78f), 0.2f, metallic: 0.3f), Generated("Container"), null, new Vector2(3, 1), 1f),
                 ["Skyline"] = Cutout(Textured(Mat("Skyline_Ruins", new Color(0.8f, 0.72f, 0.62f), 0f), Generated("Skyline"), null, new Vector2(1, 1), 1f)),
+                ["Frost_Glaze"] = Mat("Frost_Glaze", new Color(0.35f, 0.75f, 1f), 0.96f, metallic: 0.25f, emission: new Color(0.05f, 0.4f, 0.9f) * 0.9f),
+                ["Range_Target"] = Mat("Range_Target", new Color(0.95f, 0.16f, 0.05f), emission: new Color(1f, 0.12f, 0.02f) * 0.45f),
                 ["Ship_Padding"] = Mat("Ship_Padding", new Color(0.09f, 0.095f, 0.11f), 0.25f),
                 ["Strip_Warm"] = Mat("Strip_Warm", new Color(1f, 0.6f, 0.25f), emission: new Color(1f, 0.55f, 0.2f) * 4f),
                 ["Lamp_Red"] = Mat("Lamp_Red", new Color(1f, 0.15f, 0.1f), emission: new Color(1f, 0.12f, 0.06f) * 5f),

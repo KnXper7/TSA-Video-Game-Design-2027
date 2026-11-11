@@ -31,6 +31,7 @@ namespace TSAGame
         public const string Thud = "thud";
         public const string PortalOpen = "portal_open";
         public const string Explosion = "explosion";
+        public const string Ricochet = "ricochet";
 
         // Loops
         public const string Alarm = "alarm";
@@ -95,6 +96,7 @@ namespace TSAGame
                 Sfx.Stinger => Envelope(Chord(2.5f, 0.25f, 110f, 164.81f, 220f, 261.63f), 0.02f, 1.6f),
 
                 Sfx.Beep => Tone(880f, 0.16f, Wave.Sine, 0.004f, 0.05f, 0.3f),
+                Sfx.Ricochet => Tone(2600f, 0.25f, Wave.Sine, 0.001f, 0.22f, 0.3f),
                 Sfx.Throw => Envelope(Mul(Noise(0.28f, 0.35f, 0.5f), Lfo(0.28f, 3.5f, 0.9f)), 0.01f, 0.2f),
                 Sfx.Clank => Clank(0.7f),
                 Sfx.Thud => Envelope(Mix(Tone(70f, 0.3f, Wave.Sine, 0f, 0f, 0.6f), Noise(0.3f, 0.05f, 0.4f)), 0.002f, 0.25f),

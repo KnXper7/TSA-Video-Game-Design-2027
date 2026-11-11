@@ -64,6 +64,22 @@ namespace TSAGame
                 gameObject.AddComponent<Compass>();
 
             SetFade(startBlack ? 1f : 0f);
+            if (subtitleRoot.transform.Find("Accent") == null)
+            {
+                // A scene saved with the older, heavier subtitle box: swap it for the current one.
+                var parent = subtitleRoot.transform.parent;
+                int index = subtitleRoot.transform.GetSiblingIndex();
+                subtitleRoot.name = "Subtitle (old)";
+                Destroy(subtitleRoot);
+                BuildSubtitle(parent);
+                subtitleRoot.transform.SetSiblingIndex(index);
+            }
+            subtitleRect = (RectTransform)subtitleRoot.transform;
+            subtitleY = subtitleRect.anchoredPosition.y;
+            subtitleGroup = subtitleRoot.GetComponent<CanvasGroup>();
+            if (subtitleGroup == null) subtitleGroup = subtitleRoot.AddComponent<CanvasGroup>();
+            subtitleGroup.alpha = 0f;
+            subtitleGroup.blocksRaycasts = false;
             HideSubtitle();
             SetObjective(null);
             SetPrompt(null);
@@ -117,14 +133,31 @@ namespace TSAGame
 
         // ---------- Subtitles, objective, prompt ----------
 
+        CanvasGroup subtitleGroup;
+        RectTransform subtitleRect;
+        float subtitleY;
+        bool subtitleShown;
+
         public void ShowSubtitle(string speaker, string body)
         {
             subtitleRoot.SetActive(true);
-            subtitleSpeaker.text = speaker;
+            subtitleShown = true;
+            subtitleSpeaker.text = speaker != null ? speaker.ToUpper() : "";
             subtitleBody.text = body;
         }
 
-        public void HideSubtitle() => subtitleRoot.SetActive(false);
+        public void HideSubtitle() => subtitleShown = false;
+
+        void Update()
+        {
+            // The subtitle bar fades and lifts a few pixels in and out; quick, so it never lags behind the voice.
+            if (subtitleGroup == null) return;
+            float target = subtitleShown ? 1f : 0f;
+            if (Mathf.Approximately(subtitleGroup.alpha, target)) return;
+            subtitleGroup.alpha = Mathf.MoveTowards(subtitleGroup.alpha, target, Time.unscaledDeltaTime * (subtitleShown ? 7f : 5f));
+            float k = Mathf.SmoothStep(0f, 1f, subtitleGroup.alpha);
+            subtitleRect.anchoredPosition = new Vector2(subtitleRect.anchoredPosition.x, subtitleY - 10f * (1f - k));
+        }
 
         public void SetObjective(string objective)
         {
@@ -265,7 +298,31 @@ namespace TSAGame
         // ---------- Layout ----------
 
         /// <summary>Builds the placeholder layout under this object. Safe to restyle afterwards.</summary>
-        [ContextMenu("Build Default Layout")]
+        [ContextMenu("Build Default Layout")]        /// <summary>Subtitles, bottom centre (above the letterbox).</summary>
+        void BuildSubtitle(Transform root)
+        {
+            var accent = new Color(0.55f, 0.85f, 1f);
+            var ink = subtitleBody != null ? subtitleBody.color : Color.white;
+            // A slim, mostly see-through bar in the menu's style: dark glass, a hairline on top, an accent tick on the left.
+            var subtitle = UIFactory.CreateImage("Subtitle", root, new Color(0.03f, 0.05f, 0.09f, 0.42f));
+            UIFactory.Place(subtitle.rectTransform, new Vector2(0.5f, 0), new Vector2(1120, 112), new Vector2(0, 136));
+            subtitleRoot = subtitle.gameObject;
+            var subtitleLine = UIFactory.CreateImage("Line", subtitle.transform, new Color(accent.r, accent.g, accent.b, 0.45f));
+            subtitleLine.rectTransform.anchorMin = new Vector2(0, 1);
+            subtitleLine.rectTransform.anchorMax = new Vector2(1, 1);
+            subtitleLine.rectTransform.sizeDelta = new Vector2(0, 2f);
+            var subtitleTick = UIFactory.CreateImage("Accent", subtitle.transform, accent);
+            subtitleTick.rectTransform.anchorMin = new Vector2(0, 0);
+            subtitleTick.rectTransform.anchorMax = new Vector2(0, 1);
+            subtitleTick.rectTransform.pivot = new Vector2(0, 0.5f);
+            subtitleTick.rectTransform.sizeDelta = new Vector2(4, 0);
+            subtitleSpeaker = UIFactory.CreateText("Speaker", subtitle.transform, "", 15, TextAnchor.UpperLeft, accent);
+            subtitleSpeaker.font = UIFactory.TitleFont;
+            UIFactory.Stretch(subtitleSpeaker.rectTransform, 26, 12, 24, 78);
+            subtitleBody = UIFactory.CreateText("Body", subtitle.transform, "", 28, TextAnchor.UpperLeft, ink);
+            UIFactory.Stretch(subtitleBody.rectTransform, 26, 38, 24, 8);
+        }
+
         public void BuildDefaultLayout()
         {
             for (int i = transform.childCount - 1; i >= 0; i--)
@@ -312,15 +369,7 @@ namespace TSAGame
             letterboxBottom = UIFactory.CreateImage("Letterbox Bottom", root, Color.black).rectTransform;
             letterboxBottom.anchorMin = new Vector2(0, 0); letterboxBottom.anchorMax = new Vector2(1, 0); letterboxBottom.pivot = new Vector2(0.5f, 0);
 
-            // Subtitles, bottom centre (above the letterbox)
-            var subtitle = UIFactory.CreateImage("Subtitle", root, new Color(0, 0, 0, 0.55f));
-            UIFactory.Place(subtitle.rectTransform, new Vector2(0.5f, 0), new Vector2(1300, 150), new Vector2(0, 140));
-            subtitleRoot = subtitle.gameObject;
-            subtitleSpeaker = UIFactory.CreateText("Speaker", subtitle.transform, "", 24, TextAnchor.UpperLeft, accent);
-            subtitleSpeaker.fontStyle = FontStyle.Bold;
-            UIFactory.Stretch(subtitleSpeaker.rectTransform, 24, 14, 24, 100);
-            subtitleBody = UIFactory.CreateText("Body", subtitle.transform, "", 30, TextAnchor.UpperLeft, ink);
-            UIFactory.Stretch(subtitleBody.rectTransform, 24, 50, 24, 14);
+            BuildSubtitle(root);
 
             // Dialogue choices, centre
             choiceRoot = UIFactory.CreateRect("Choices", root);
