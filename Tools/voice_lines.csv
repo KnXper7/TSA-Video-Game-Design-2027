@@ -8,8 +8,11 @@ d19c400b.wav,SHIP AI,Your suit has no thrusters. You have four minutes of air.,A
 739f7561.wav,ENGINEER,"Stuck in zero gravity, that ball is the difference between drifting forever and getting home.",Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 d7f6ed1b.wav,COMMANDER,I promised I'd come back. So move.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 419fb525.wav,COMMANDER,Keep the lights on. I'm not done yet.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
-f24d3a69.wav,SHIP AI,That rock is glazed with frost. The ball cannot bite into it. It will only skip off.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+6f88ba65.wav,SHIP AI,The hatch is sealed from the strike. The emergency release is the yellow box beside it. Hit it.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+6d6457cc.wav,SHIP AI,Release fired. The hatch is open. Come home.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+1ec911ea.wav,SHIP AI,That is glazed with frost. The ball cannot bite into it. It will only skip off. Look for bare rock or torn hull.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 f9ccadb1.wav,SHIP AI,Debris is wedged against the hatch. It is loose. Knock it clear with the ball.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
+a13ccafd.wav,SHIP AI,Debris is clear. Now the emergency release. The yellow box beside the hatch.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 336c548b.wav,SHIP AI,Hatch is clear. Come home.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 00bf858f.wav,SHIP AI,It's holding. Now reel yourself in.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
 c7d19850.wav,SHIP AI,Good. Now the next one. Work your way to the hull.,Assets/_Project/Scripts/Sequences/AdriftSequence.cs
@@ -156,9 +159,8 @@ fc822597.wav,QUARTERMASTER,...Take it. And don't make me regret the paperwork.,A
 c0a3d8b2.wav,QUARTERMASTER,You don't outrank a locked cabinet. No.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 060bab6c.wav,QUARTERMASTER,Appreciate that. Fly safe.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 93a47e31.wav,ENGINEER,You're not going up until I've seen you use it. The practice range is just east of the pad.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
-17cc7329.wav,ENGINEER,"Three targets. One you can hit straight. One is loose, so knock it off its post. The last one you can't see from the line.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
-14fc9c09.wav,ENGINEER,That pale plate is frost glaze. Nothing grips frost. The ball skips off it like a stone off water. Use that.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
-9a976f61.wav,ENGINEER,There. See how it came off the frost? Same angle out as in. Move along the line until it lines up.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
+b189b613.wav,ENGINEER,"Five bays, left to right. Each one teaches you one thing. The lamp over the bay goes green when you've got it.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
+8361d02e.wav,ENGINEER,The blue plates are frost glaze. Nothing grips frost. The ball skips off it like a stone off water.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 af07e509.wav,ENGINEER,"Grip, knock, bank. That's all it does, and it's all you'll need.",Assets/_Project/Scripts/Sequences/MemorySequence.cs
 2ef7f388.wav,COMMANDER,Let's hope so.,Assets/_Project/Scripts/Sequences/MemorySequence.cs
 935f8df8.wav,BOTANIST,Commander. I was afraid you'd leave without it.,Assets/_Project/Scripts/Sequences/MemorySequence.cs

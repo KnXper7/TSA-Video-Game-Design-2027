@@ -383,7 +383,7 @@ namespace TSAGame.EditorTools
 
             // Dead trees
             var trees = new GameObject("Dead Trees").transform;
-            Vector3[] keepClear = { pad, new Vector3(2, 0, 22), new Vector3(-24, 0, 44), new Vector3(-30, 0, 14), new Vector3(34, 0, 30), new Vector3(46, 0, -24), new Vector3(23, 0, 56) };
+            Vector3[] keepClear = { pad, new Vector3(2, 0, 22), new Vector3(-24, 0, 44), new Vector3(-30, 0, 14), new Vector3(34, 0, 30), new Vector3(46, 0, -24), new Vector3(17, 0, 57), new Vector3(28, 0, 57), new Vector3(39, 0, 57) };
             for (int i = 0; i < 90; i++)
             {
                 var p = new Vector3(Range(random, -190, 190), 0, Range(random, -120, 210));
@@ -519,39 +519,130 @@ namespace TSAGame.EditorTools
 
             // ---- Player ----
             var (player, playerCam) = Player(new Vector3(2, 0, 22), 1.65f, seatedYawLimit: 0f);
-            // ---- Practice range: the grip ball tutorial (targets behind a rail the player can't cross) ----
+            // ---- Practice range: the grip ball tutorial. Five bays, each teaching one idea, then combining them. ----
+            // Laid out like a test chamber: one rule per bay, a sign that names it, a lamp that turns green when it's solved.
             var range = new GameObject("Practice Range").transform;
-            Wall(range, new Vector3(23, 2, 51), new Vector3(20, 4, 0.3f));
-            Wall(range, new Vector3(23, 2, 67), new Vector3(20, 4, 0.3f));
-            Wall(range, new Vector3(13, 2, 59), new Vector3(0.3f, 4, 16));
-            Wall(range, new Vector3(33, 2, 59), new Vector3(0.3f, 4, 16));
-            Prim(PrimitiveType.Cube, "Rail", range, new Vector3(23, 1f, 51), new Vector3(20, 0.08f, 0.08f), mm["Crate_Trim"], collider: false);
-            for (int i = 0; i <= 10; i++)
-                Prim(PrimitiveType.Cube, "Rail Post", range, new Vector3(13 + i * 2f, 0.5f, 51), new Vector3(0.1f, 1f, 0.1f), mm["Crate_Trim"], collider: false);
-            var rangeSign = WorldText("Range Sign", range, new Vector3(23, 2.3f, 51), new Vector2(900, 120), 0.004f, 60, new Color(1f, 0.8f, 0.5f));
-            rangeSign.transform.parent.rotation = Quaternion.Euler(0, 0, 0);
-            rangeSign.text = "PRACTICE RANGE";
-            // 1: a straight shot
-            Prim(PrimitiveType.Cube, "Target Post", range, new Vector3(27, 0.5f, 63.2f), new Vector3(0.15f, 1f, 0.15f), mm["Tower_Steel"], collider: false);
-            var target1 = Surface(Prim(PrimitiveType.Cube, "MODEL_Target_Straight", range, new Vector3(27, 1.7f, 63), new Vector3(1.6f, 1.6f, 0.15f), mm["Range_Target"]), BallSurface.Kind.Target);
-            // 2: a loose crate on a post, to knock off
-            Prim(PrimitiveType.Cube, "Crate Post", range, new Vector3(30.5f, 0.6f, 58), new Vector3(0.5f, 1.2f, 0.5f), mm["Tower_Concrete"]);
-            var looseSlot = Slot("Target_Loose", range, new Vector3(30.5f, 1.21f, 58), Vector3.zero);
-            Model("Crate", looseSlot, Vector3.zero, Quaternion.identity, 1f, new() { ["Crate_Light"] = mm["Range_Target"] });
-            var looseBox = looseSlot.gameObject.AddComponent<BoxCollider>();
-            looseBox.center = new Vector3(0, 0.25f, 0);
-            looseBox.size = new Vector3(0.9f, 0.5f, 0.6f);
-            looseSlot.gameObject.AddComponent<Rigidbody>().mass = 6f;
-            var target2 = Surface(looseSlot.gameObject, BallSurface.Kind.Loose);
-            // 3: hidden behind a wall; only a throw banked off the frost plate reaches it
-            Prim(PrimitiveType.Cube, "Blind Wall", range, new Vector3(16.25f, 1.6f, 58.6f), new Vector3(5.5f, 3.2f, 0.3f), mm["Tower_Concrete"]);
-            Prim(PrimitiveType.Cube, "Blind Wall Back", range, new Vector3(13.9f, 1.6f, 60.5f), new Vector3(0.3f, 3.2f, 4.1f), mm["Tower_Concrete"]);
-            Prim(PrimitiveType.Cube, "Blind Wall Far", range, new Vector3(16.25f, 1.6f, 62.4f), new Vector3(5.5f, 3.2f, 0.3f), mm["Tower_Concrete"]);
-            var target3 = Surface(Prim(PrimitiveType.Cube, "MODEL_Target_Banked", range, new Vector3(14.5f, 1.7f, 60.5f), new Vector3(0.15f, 2f, 2.6f), mm["Range_Target"]), BallSurface.Kind.Target);
-            Prim(PrimitiveType.Cube, "Frost Post", range, new Vector3(21, 0.3f, 60.5f), new Vector3(0.2f, 0.6f, 0.2f), mm["Tower_Steel"], collider: false);
-            var frostPlate = Surface(Prim(PrimitiveType.Cube, "MODEL_FrostPlate", range, new Vector3(21, 1.8f, 60.5f), new Vector3(2.8f, 2.8f, 0.15f), mm["Frost_Glaze"],
-                Quaternion.Euler(0, 45, 0)), BallSurface.Kind.Frost);
-            var rangeMarker = Beacon(new Vector3(23, 0, 49.5f), m);
+            const float lineZ = 51f, backZ = 67.4f, bayWidth = 6.4f, firstX = 12f;
+            const int bays = 5;
+            float lastX = firstX + bays * bayWidth;
+            float midX = (firstX + lastX) / 2f, midZ = (lineZ + backZ) / 2f;
+            Wall(range, new Vector3(midX, 2, lineZ), new Vector3(lastX - firstX, 4, 0.3f));
+            Wall(range, new Vector3(midX, 2, backZ), new Vector3(lastX - firstX, 4, 0.3f));
+            Wall(range, new Vector3(firstX, 2, midZ), new Vector3(0.3f, 4, backZ - lineZ));
+            Wall(range, new Vector3(lastX, 2, midZ), new Vector3(0.3f, 4, backZ - lineZ));
+
+            // Poured slab, back stop, lane walls
+            Prim(PrimitiveType.Cube, "Slab", range, new Vector3(midX, 0.02f, (46.5f + backZ) / 2f), new Vector3(lastX - firstX + 1.2f, 0.08f, backZ - 46.5f + 0.6f), mm["Tower_Concrete"]);
+            Prim(PrimitiveType.Cube, "Back Stop", range, new Vector3(midX, 2.2f, backZ + 0.3f), new Vector3(lastX - firstX + 0.6f, 4.4f, 0.5f), mm["Tower_Concrete"]);
+            for (int i = 0; i <= bays; i++)
+            {
+                float x = firstX + i * bayWidth;
+                Prim(PrimitiveType.Cube, "Lane Wall", range, new Vector3(x, 1.4f, (52.6f + backZ) / 2f), new Vector3(0.3f, 2.8f, backZ - 52.6f), mm["Tower_Concrete"]);
+                Prim(PrimitiveType.Cube, "Lane Wall Cap", range, new Vector3(x, 2.84f, (52.6f + backZ) / 2f), new Vector3(0.42f, 0.08f, backZ - 52.6f), mm["Range_Paint"], collider: false);
+                Prim(PrimitiveType.Cube, "Canopy Post", range, new Vector3(x, 1.75f, lineZ), new Vector3(0.18f, 3.5f, 0.18f), mm["Crate_Trim"], collider: false);
+                Prim(PrimitiveType.Cube, "Canopy Post", range, new Vector3(x, 1.75f, 47.2f), new Vector3(0.18f, 3.5f, 0.18f), mm["Crate_Trim"], collider: false);
+            }
+            // Firing-line canopy with strip lights, a hand rail and a painted line
+            Prim(PrimitiveType.Cube, "Canopy Roof", range, new Vector3(midX, 3.56f, 49.1f), new Vector3(lastX - firstX + 0.8f, 0.12f, 4.6f), mm["Container_Rust"], collider: false);
+            Prim(PrimitiveType.Cube, "Canopy Beam", range, new Vector3(midX, 3.36f, lineZ), new Vector3(lastX - firstX + 0.4f, 0.28f, 0.2f), mm["Crate_Trim"], collider: false);
+            Prim(PrimitiveType.Cube, "Rail", range, new Vector3(midX, 1.02f, lineZ), new Vector3(lastX - firstX, 0.07f, 0.07f), mm["Crate_Trim"], collider: false);
+            Prim(PrimitiveType.Cube, "Rail Low", range, new Vector3(midX, 0.55f, lineZ), new Vector3(lastX - firstX, 0.05f, 0.05f), mm["Crate_Trim"], collider: false);
+            Prim(PrimitiveType.Cube, "Firing Line", range, new Vector3(midX, 0.065f, 50.4f), new Vector3(lastX - firstX, 0.01f, 0.18f), mm["Range_Paint"], collider: false);
+
+            string[] bayNames = { "STRAIGHT", "KNOCK IT LOOSE", "BANK OFF FROST", "CLEAR, THEN BANK", "DOUBLE BANK" };
+            var rangeTargets = new BallSurface[bays];
+            BallSurface frostPlate = null;
+            for (int i = 0; i < bays; i++)
+            {
+                float cx = firstX + (i + 0.5f) * bayWidth;
+                var bay = new GameObject($"Bay {i + 1}").transform;
+                bay.SetParent(range, false);
+
+                Prim(PrimitiveType.Cube, "Strip Light", bay, new Vector3(cx, 3.47f, 49.6f), new Vector3(3.2f, 0.05f, 0.22f), mm["Tower_Light"], collider: false);
+                PointLight("Bay Light", bay, new Vector3(cx, 3.1f, 49.8f), new Color(1f, 0.9f, 0.72f), 9f, 9f);
+                PointLight("Lane Light", bay, new Vector3(cx, 3.0f, 58.5f), new Color(1f, 0.86f, 0.66f), 10f, 13f);
+                Prim(PrimitiveType.Cube, "Lane Lamp", bay, new Vector3(cx, 4.3f, backZ + 0.1f), new Vector3(1.6f, 0.14f, 0.3f), mm["Tower_Light"], collider: false);
+                var baySign = WorldText("Bay Sign", bay, new Vector3(cx, 3.36f, lineZ - 0.12f), new Vector2(1500, 90), 0.0034f, 44, new Color(1f, 0.86f, 0.6f));
+                baySign.transform.parent.rotation = Quaternion.Euler(0, 0, 0);
+                baySign.font = UIFactory.TitleFont;
+                baySign.text = $"0{i + 1}   {bayNames[i]}";
+                Prim(PrimitiveType.Cube, "Bay Number Paint", bay, new Vector3(cx, 0.065f, 52.4f), new Vector3(bayWidth - 0.8f, 0.01f, 0.12f), mm["Range_Paint"], collider: false);
+
+                BallSurface goal;
+                switch (i)
+                {
+                    case 0:     // one rule: the ball goes where you look
+                        goal = RangeTarget(bay, new Vector3(cx, 0.06f, 63.5f), 180f);
+                        break;
+                    case 1:     // loose things can't be gripped, only shoved
+                    {
+                        Prim(PrimitiveType.Cube, "Crate Post", bay, new Vector3(cx, 0.65f, 60), new Vector3(0.55f, 1.3f, 0.55f), mm["Tower_Concrete"]);
+                        var looseSlot = Slot("Target_Loose", bay, new Vector3(cx, 1.31f, 60), Vector3.zero);
+                        Model("Crate", looseSlot, Vector3.zero, Quaternion.identity, 1f, new() { ["Crate_Light"] = mm["Range_Target"] });
+                        var looseBox = looseSlot.gameObject.AddComponent<BoxCollider>();
+                        looseBox.center = new Vector3(0, 0.25f, 0);
+                        looseBox.size = new Vector3(0.9f, 0.5f, 0.6f);
+                        looseSlot.gameObject.AddComponent<Rigidbody>().mass = 6f;
+                        goal = Surface(looseSlot.gameObject, BallSurface.Kind.Loose);
+                        break;
+                    }
+                    case 2:     // frost throws the ball off at the mirror angle: the target is round a corner
+                        Alcove(bay, mm, cx - 1.9f, 61f, toEast: true);
+                        goal = RangeTarget(bay, new Vector3(cx - 2.5f, 0.06f, 61f), 90f);
+                        frostPlate = FrostPanel(bay, new Vector3(cx + 1.3f, 0.06f, 61f), 45f);
+                        break;
+                    case 3:     // two rules together: something loose is in the way of the bank shot
+                    {
+                        Alcove(bay, mm, cx + 1.9f, 61f, toEast: false);
+                        goal = RangeTarget(bay, new Vector3(cx + 2.5f, 0.06f, 61f), -90f);
+                        FrostPanel(bay, new Vector3(cx - 1.3f, 0.06f, 61f), -45f);
+                        var board = Prim(PrimitiveType.Cube, "MODEL_LooseBoard", bay, new Vector3(cx - 1.3f, 1.4f, 54.6f), new Vector3(2.7f, 2.7f, 0.12f), mm["Range_Board"]);
+                        var boardBody = board.AddComponent<Rigidbody>();
+                        boardBody.mass = 5f;
+                        boardBody.isKinematic = true;
+                        Set(Surface(board, BallSurface.Kind.Loose), ("shove", 7f), ("clearedOnceHit", true));
+                        break;
+                    }
+                    default:    // the periscope: two frost plates carry the ball round and back toward you
+                    {
+                        Prim(PrimitiveType.Cube, "Blind Wall", bay, new Vector3(cx - 1.9f, 1.6f, 55.8f), new Vector3(2.4f, 3.2f, 0.3f), mm["Tower_Concrete"]);
+                        Prim(PrimitiveType.Cube, "Blind Wall Side", bay, new Vector3(cx - 0.6f, 1.6f, 57.4f), new Vector3(0.3f, 3.2f, 3.5f), mm["Tower_Concrete"]);
+                        goal = RangeTarget(bay, new Vector3(cx - 1.9f, 0.06f, 56.6f), 0f);
+                        FrostPanel(bay, new Vector3(cx + 1.9f, 0.06f, 63.4f), 45f);
+                        FrostPanel(bay, new Vector3(cx - 1.9f, 0.06f, 63.4f), -45f);
+                        break;
+                    }
+                }
+                rangeTargets[i] = goal;
+
+                // Station lamp on the canopy beam: amber until this bay's target is down, then green.
+                var lamp = Prim(PrimitiveType.Cube, "Station Lamp", bay, new Vector3(cx + 2.6f, 3.36f, lineZ - 0.13f), new Vector3(0.34f, 0.18f, 0.06f), mm["Range_Lamp"], collider: false);
+                var lampGlow = PointLight("Station Lamp Glow", bay, new Vector3(cx + 2.6f, 3.2f, lineZ - 0.4f), new Color(1f, 0.55f, 0.1f), 1.2f, 3f);
+                Set(lamp.AddComponent<RangeLamp>(), ("watch", goal), ("lamp", lamp.GetComponent<Renderer>()), ("glow", lampGlow));
+            }
+            // Dressing, so the range belongs to the launch site: a poured path from the pad, a workbench and the kit left out
+            Prim(PrimitiveType.Cube, "Path", range, new Vector3((firstX + 1f) / 2f, 0.02f, 49f), new Vector3(firstX - 1f, 0.08f, 3.2f), mm["Tower_Concrete"]);
+            Prim(PrimitiveType.Cube, "Path Edge", range, new Vector3((firstX + 1f) / 2f, 0.065f, 50.5f), new Vector3(firstX - 1f, 0.01f, 0.12f), mm["Range_Paint"], collider: false);
+            Prim(PrimitiveType.Cube, "Path Edge", range, new Vector3((firstX + 1f) / 2f, 0.065f, 47.5f), new Vector3(firstX - 1f, 0.01f, 0.12f), mm["Range_Paint"], collider: false);
+            var benchPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Third-Party-3D-Models/computer-desk/ComputerDeskF.prefab");
+            if (benchPrefab != null)
+            {
+                var bench = (GameObject)PrefabUtility.InstantiatePrefab(benchPrefab, range);
+                bench.name = "MODEL_Workbench";
+                bench.transform.SetPositionAndRotation(new Vector3(lastX - 2.2f, 0.06f, 47.4f), Quaternion.Euler(0, 90, 0));
+                bench.transform.localScale = new Vector3(0.45f, 0.4f, 0.43f);
+                Model("Crate", range, new Vector3(lastX - 2.8f, 0.86f, 47.4f), Quaternion.Euler(0, 20, 0), 0.7f);
+            }
+            foreach (var (pos, yaw, size) in new[] { (new Vector3(firstX + 0.9f, 0.06f, 47.3f), 12f, 1.3f), (new Vector3(firstX + 2.2f, 0.06f, 47.1f), -25f, 1.1f), (new Vector3(firstX + 1.4f, 0.7f, 47.2f), 40f, 1f),
+                                                     (new Vector3(midX - 4f, 0.06f, 46.9f), 70f, 1.2f), (new Vector3(lastX + 1.6f, 0.06f, 50.2f), 15f, 1.5f), (new Vector3(lastX + 1.7f, 0.82f, 50.3f), -30f, 1.2f) })
+                Model("Crate", range, pos, Quaternion.Euler(0, yaw, 0), size);
+            // Cables from the work lights back to the canopy
+            Prim(PrimitiveType.Cube, "Cable", range, new Vector3(firstX - 0.9f, 0.07f, 50.9f), new Vector3(0.05f, 0.04f, 3.4f), mm["Crate_Trim"], Quaternion.Euler(0, -14, 0), collider: false);
+            Prim(PrimitiveType.Cube, "Cable", range, new Vector3(lastX + 0.9f, 0.07f, 52.6f), new Vector3(0.05f, 0.04f, 3.6f), mm["Crate_Trim"], Quaternion.Euler(0, 14, 0), collider: false);
+            // Work lights dragged out for the last night of practice
+            foreach (var (pos, yaw) in new[] { (new Vector3(firstX - 1.3f, 0.06f, 52.6f), 50f), (new Vector3(lastX + 1.3f, 0.06f, 54.4f), -50f), (new Vector3(midX + 1.6f, 0.06f, 46.9f), 200f) })
+                RangeProp("Floodlight", range, pos, yaw);
+            var rangeMarker = Beacon(new Vector3(firstX + bayWidth * 0.5f, 0, 49.4f), m);
             var rangeBall = GripRig(playerCam, null);
 
             // Grit blowing across the dry ground, carried along with the player
@@ -589,7 +680,7 @@ namespace TSAGame.EditorTools
                 ("cutsceneCamera", cutsceneCam), ("vhs", vhs), ("rocket", rocket), ("rocketCentre", rocketCentre), ("plumes", plumes),
                 ("padSmoke", padSmoke), ("launchLight", launchLight), ("wideShot", wide), ("lowShot", low), ("titleShot", titleShot), ("title", title), ("titleStage", stageRoot.gameObject),
                 ("engineerPerson", engineerSlot.GetComponentInChildren<PersonAnimator>()), ("rangeBall", rangeBall),
-                ("rangeTargets", new Object[] { target1, target2, target3 }), ("rangeFrost", frostPlate), ("rangeMarker", rangeMarker));
+                ("rangeTargets", rangeTargets.Cast<Object>().ToArray()), ("rangeFrost", frostPlate), ("rangeMarker", rangeMarker));
 
             AddHud();
             Save(scene, SceneFlow.Memory);
@@ -636,11 +727,37 @@ namespace TSAGame.EditorTools
                 filter.gameObject.AddComponent<MeshCollider>().sharedMesh = filter.sharedMesh;
             }
             var hatch = Child(rocketModel, "Anchor_Hatch");
-            var hatchLight = PointLight("Hatch Light", hatch, hatch.position - rocket.right * 1.2f, new Color(0.3f, 1f, 0.45f), 8f, 30f);
+            // The wings iced over in the strike: nothing grips them, the ball skips off.
+            var wings = Child(rocketModel, "SolarPanels");
+            wings.GetComponent<Renderer>().sharedMaterial = ModelMats["Solar_Frosted"];
+            Surface(wings.gameObject, BallSurface.Kind.Frost);
+            var hatchLight = PointLight("Hatch Light", hatch, hatch.position - rocket.right * 1.2f, new Color(1f, 0.2f, 0.12f), 8f, 30f);
             Set(hatchLight.gameObject.AddComponent<FlickerLight>(), ("minIntensity", 3f), ("maxIntensity", 14f), ("speed", 1.5f));
             hatch.gameObject.AddComponent<CompassMarker>();
             Prim(PrimitiveType.Sphere, "Hatch Lamp", hatch, new Vector3(0, 0, 0), Vector3.one * 0.35f, m.Leaves, collider: false)
                 .GetComponent<Renderer>().sharedMaterial = ModelMats["Hatch_Lamp"];
+            var hatchLamp = hatch.Find("Hatch Lamp").GetComponent<Renderer>();
+            // The emergency release: a switch on the hull beside the hatch. The hatch stays sealed until the ball hits it.
+            var releaseRoot = new GameObject("MODEL_HatchRelease");
+            releaseRoot.transform.SetParent(rocket, true);
+            releaseRoot.transform.SetPositionAndRotation(hatch.position + rocket.forward * 2.4f - rocket.right * 0.25f, Quaternion.LookRotation(-rocket.right, rocket.forward));
+            var releaseProp = RangeProp("HatchRelease", releaseRoot.transform, releaseRoot.transform.position, 0f);
+            if (releaseProp != null)
+            {
+                releaseProp.transform.localPosition = Vector3.zero;
+                releaseProp.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);      // the model stands on the ground; here its back is on the hull
+            }
+            else Prim(PrimitiveType.Cube, "Box", releaseRoot.transform, Vector3.zero, new Vector3(1f, 1f, 0.4f), ModelMats["Range_Paint"], collider: false);
+            var releaseBox = releaseRoot.AddComponent<BoxCollider>();
+            releaseBox.center = new Vector3(0, 0, 0.3f);
+            releaseBox.size = new Vector3(1.5f, 1.5f, 0.9f);
+            var hatchRelease = Surface(releaseRoot, BallSurface.Kind.Target);
+            Set(hatchRelease, ("staysPut", true));
+            PointLight("Release Lamp", releaseRoot.transform, releaseRoot.transform.position - rocket.right * 0.9f, new Color(1f, 0.7f, 0.15f), 2.5f, 7f);
+            Set(hatchLamp.gameObject.AddComponent<RangeLamp>(), ("watch", hatchRelease), ("lamp", hatchLamp), ("glow", hatchLight),
+                ("waiting", new Color(1f, 0.2f, 0.12f)), ("done", new Color(0.3f, 1f, 0.45f)));
+            // A work light on the hull so the damaged side reads from a distance
+            PointLight("Hull Flood", rocket, hatch.position - rocket.right * 5f + rocket.up * 3f, new Color(0.82f, 0.9f, 1f), 5f, 26f);
             var plume = Plume("Engine Plume", rocket, new Vector3(0, 0, -2.2f), Quaternion.Euler(180, 0, 0), 2.6f, 26f, 0.55f, 300f, false,
                 new Color(0.75f, 0.85f, 1f), new Color(1f, 0.45f, 0.1f));
 
@@ -685,15 +802,29 @@ namespace TSAGame.EditorTools
                 // Two of the stepping stones are glazed with frost: the ball skips off them, so the route has to go round.
                 if (p == new Vector3(9, -3, 44) || p == new Vector3(10, 10, 88))
                 {
-                    foreach (var r in pathRock.GetComponentsInChildren<Renderer>()) r.sharedMaterial = ModelMats["Frost_Glaze"];
+                    foreach (var r in pathRock.GetComponentsInChildren<Renderer>()) r.sharedMaterial = ModelMats["Rock_Frost"];
                     Surface(pathRock, BallSurface.Kind.Frost);
                     pathRock.name = "MODEL_FrostRock";
                 }
             }
+            // Torn hull plates knocked off in the strike. Bare metal: the ball grips them, so they bridge the gaps the frost leaves.
+            var wreck = new GameObject("Wreckage").transform;
+            foreach (var (p, euler) in new[] { (new Vector3(15, 3, 52), new Vector3(20, 40, 10)), (new Vector3(20, 14, 84), new Vector3(-30, 110, 25)), (new Vector3(2, -4, 78), new Vector3(60, 10, -40)) })
+            {
+                var plate = HullPlate(wreck, p, Quaternion.Euler(euler), 1f);
+                plate.AddComponent<BoxCollider>().size = new Vector3(3f, 2.2f, 0.7f);
+            }
+            // Smaller pieces drifting round the ship, so the damage reads as one event rather than a rock and a clean hull
+            for (int i = 0; i < 14; i++)
+            {
+                var p = restPosition + new Vector3(Range(random, -1, 1), Range(random, -1, 1), Range(random, -1, 1)).normalized * Range(random, 9, 34);
+                var bit = HullPlate(wreck, p, Quaternion.Euler(Range(random, 0, 360), Range(random, 0, 360), Range(random, 0, 360)), Range(random, 0.18f, 0.5f));
+                Set(bit.AddComponent<Spinner>(), ("degreesPerSecond", new Vector3(Range(random, -14, 14), Range(random, -14, 14), Range(random, -14, 14))));
+            }
             // Loose debris wedged against the hatch: it has to be knocked clear before you can get in.
-            var blockerRock = Asteroid(rocks, random, hatch.position - rocket.right * 3.4f, 2f, collider: false, spin: false);
+            var blockerRock = HullPlate(rocks, hatch.position - rocket.right * 3.4f, Quaternion.LookRotation(rocket.right, rocket.up) * Quaternion.Euler(12, 0, 25), 1.15f);
             blockerRock.name = "MODEL_HatchDebris";
-            blockerRock.AddComponent<SphereCollider>().radius = 1.05f;
+            blockerRock.AddComponent<SphereCollider>().radius = 1.6f;
             var blockerBody = blockerRock.AddComponent<Rigidbody>();
             blockerBody.useGravity = false;
             blockerBody.mass = 400f;
@@ -736,7 +867,7 @@ namespace TSAGame.EditorTools
             Set(sequence, ("player", zeroG), ("ball", ball), ("oxygen", oxygen), ("playerShake", shake), ("hatch", hatch),
                 ("cutsceneCamera", cutsceneCam), ("impactShot", impactShot), ("rocket", rocket), ("rocketFlyStart", rocketFlyStart),
                 ("rocketRest", rocketRest), ("rock", rockSlot), ("rockStart", rockStart), ("rockRest", rockRest),
-                ("plumes", new Object[] { plume }), ("debrisBurst", burst), ("damageEffects", damage.gameObject), ("hatchBlocker", hatchBlocker));
+                ("plumes", new Object[] { plume }), ("debrisBurst", burst), ("damageEffects", damage.gameObject), ("hatchBlocker", hatchBlocker), ("hatchRelease", hatchRelease));
 
             AddHud();
             Save(scene, SceneFlow.Adrift);
@@ -778,6 +909,79 @@ namespace TSAGame.EditorTools
             return surface;
         }
 
+        /// <summary>An AI-generated prop (Tools/blender/import_generated.py) placed on the ground. Null if it hasn't been imported.</summary>
+        static GameObject RangeProp(string name, Transform parent, Vector3 position, float yaw)
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>($"{ModelsDir}/People/{name}.fbx") == null) return null;
+            var prop = (GameObject)PrefabUtility.InstantiatePrefab(PersonPrefab(name, animated: false), parent);
+            prop.name = "MODEL_" + name;
+            prop.transform.SetPositionAndRotation(position, Quaternion.Euler(0, yaw, 0));
+            return prop;
+        }
+
+        /// <summary>A torn piece of rocket hull (AI-generated model), or a plain plate if the model isn't imported.</summary>
+        static GameObject HullPlate(Transform parent, Vector3 position, Quaternion rotation, float scale)
+        {
+            var root = new GameObject("MODEL_HullPlate");
+            root.transform.SetParent(parent, false);
+            root.transform.SetPositionAndRotation(position, rotation);
+            var prop = RangeProp("HullPlate", root.transform, position, 0f);
+            if (prop != null)
+            {
+                prop.transform.localRotation = Quaternion.identity;
+                prop.transform.localPosition = new Vector3(0, -1.1f, 0);      // the model's origin is at its base; centre it
+            }
+            else Prim(PrimitiveType.Cube, "Plate", root.transform, Vector3.zero, new Vector3(3f, 2.2f, 0.25f), ModelMats["Rocket_White"], collider: false);
+            root.transform.localScale = Vector3.one * scale;
+            return root;
+        }
+
+        /// <summary>A steel knock-down target. yaw 180 faces the firing line (-z). Falls back to a plain disc if the model is missing.</summary>
+        static BallSurface RangeTarget(Transform parent, Vector3 ground, float yaw)
+        {
+            var root = new GameObject("MODEL_RangeTarget");
+            root.transform.SetParent(parent, false);
+            root.transform.SetPositionAndRotation(ground, Quaternion.Euler(0, yaw, 0));
+            var hinge = new GameObject("Hinge").transform;       // the whole target tips over about its feet
+            hinge.SetParent(root.transform, false);
+            var prop = RangeProp("RangeTarget", hinge, ground, yaw);
+            if (prop == null)
+            {
+                Prim(PrimitiveType.Cylinder, "Disc", hinge, new Vector3(0, 1.1f, 0), new Vector3(1.5f, 0.05f, 1.5f), ModelMats["Range_Target"], Quaternion.Euler(90, 0, 0), collider: false);
+                Prim(PrimitiveType.Cube, "Stand", hinge, new Vector3(0, 0.3f, -0.1f), new Vector3(1.3f, 0.6f, 0.1f), ModelMats["Tower_Steel"], collider: false);
+            }
+            var box = root.AddComponent<BoxCollider>();
+            box.center = new Vector3(0, 1.05f, 0);
+            box.size = new Vector3(1.7f, 2.1f, 0.5f);
+            var surface = Surface(root, BallSurface.Kind.Target);
+            Set(surface, ("tips", hinge));
+            return surface;
+        }
+
+        /// <summary>A framed frost plate. yaw is the angle of the plate's face from the firing line.</summary>
+        static BallSurface FrostPanel(Transform parent, Vector3 ground, float yaw)
+        {
+            var root = new GameObject("MODEL_FrostPlate");
+            root.transform.SetParent(parent, false);
+            root.transform.SetPositionAndRotation(ground, Quaternion.Euler(0, yaw, 0));
+            if (RangeProp("FrostPanel", root.transform, ground, yaw) == null)
+                Prim(PrimitiveType.Cube, "Plate", root.transform, new Vector3(0, 1.5f, 0), new Vector3(2.8f, 2.8f, 0.15f), ModelMats["Frost_Glaze"], collider: false);
+            var box = root.AddComponent<BoxCollider>();
+            box.center = new Vector3(0, 1.5f, 0);
+            box.size = new Vector3(2.8f, 2.9f, 0.16f);
+            // The glazed face itself: a thin glowing sheet set into the frame, so frost always reads as frost.
+            Prim(PrimitiveType.Cube, "Glaze", root.transform, new Vector3(0, 1.56f, 0), new Vector3(2.46f, 2.46f, 0.36f), ModelMats["Frost_Glaze"], collider: false);
+            PointLight("Frost Glow", root.transform, ground + new Vector3(0, 1.5f, 0), new Color(0.45f, 0.8f, 1f), 0.9f, 4f);
+            return Surface(root, BallSurface.Kind.Frost);
+        }
+
+        /// <summary>Three walls round a hidden target at (x, z), open to the east or west only.</summary>
+        static void Alcove(Transform parent, Dictionary<string, Material> mm, float x, float z, bool toEast)
+        {
+            Prim(PrimitiveType.Cube, "Blind Wall", parent, new Vector3(x, 1.6f, z - 2.2f), new Vector3(2.6f, 3.2f, 0.3f), mm["Tower_Concrete"]);
+            Prim(PrimitiveType.Cube, "Blind Wall Far", parent, new Vector3(x, 1.6f, z + 2.2f), new Vector3(2.6f, 3.2f, 0.3f), mm["Tower_Concrete"]);
+        }
+
         static void Wall(Transform parent, Vector3 centre, Vector3 size)
         {
             var go = new GameObject("Range Barrier") { layer = 2 };        // stops the player, lets the ball through
@@ -790,6 +994,17 @@ namespace TSAGame.EditorTools
         static GameObject Model(string file, Transform parent, Vector3 localPosition, Quaternion localRotation, float scale,
             Dictionary<string, Material> overrides = null)
         {
+            // The cargo crates use the realistic AI-generated transit case when it has been imported.
+            if (file == "Crate" && AssetDatabase.LoadAssetAtPath<GameObject>($"{ModelsDir}/People/CargoCrate.fbx") != null)
+            {
+                var crate = (GameObject)PrefabUtility.InstantiatePrefab(PersonPrefab("CargoCrate", animated: false));
+                crate.name = "MODEL_Crate";
+                if (parent != null) crate.transform.SetParent(parent, false);
+                crate.transform.localPosition = localPosition;
+                crate.transform.localRotation = localRotation;
+                crate.transform.localScale = Vector3.one * scale;
+                return crate;
+            }
             var asset = ModelPrefab(file);
             if (asset == null) return new GameObject(file);
             var go = (GameObject)PrefabUtility.InstantiatePrefab(asset);
@@ -887,6 +1102,9 @@ namespace TSAGame.EditorTools
             foreach (var part in manifest.parts)
             {
                 var renderer = model.GetComponentsInChildren<Renderer>(true).FirstOrDefault(r => r.name == part.name || r.name.StartsWith(part.name + "."));
+                // A model that is one single mesh is imported without a named part: its only renderer is the part.
+                var all = model.GetComponentsInChildren<Renderer>(true);
+                if (renderer == null && manifest.parts.Length == 1 && all.Length == 1) renderer = all[0];
                 if (renderer == null) continue;
                 renderer.sharedMaterial = PersonMaterial(character, part, folder);
                 if (renderer is SkinnedMeshRenderer skinned) skinned.updateWhenOffscreen = true;     // posed far from the rest pose
@@ -1322,6 +1540,11 @@ namespace TSAGame.EditorTools
                 ["Container_Rust"] = Textured(Mat("Container_Rust", new Color(0.85f, 0.8f, 0.78f), 0.2f, metallic: 0.3f), Generated("Container"), null, new Vector2(3, 1), 1f),
                 ["Skyline"] = Cutout(Textured(Mat("Skyline_Ruins", new Color(0.8f, 0.72f, 0.62f), 0f), Generated("Skyline"), null, new Vector2(1, 1), 1f)),
                 ["Frost_Glaze"] = Mat("Frost_Glaze", new Color(0.35f, 0.75f, 1f), 0.96f, metallic: 0.25f, emission: new Color(0.05f, 0.4f, 0.9f) * 0.9f),
+                ["Rock_Frost"] = Textured(Mat("Rock_Frost", new Color(0.55f, 0.82f, 1f), 0.88f, metallic: 0.1f, emission: new Color(0.03f, 0.16f, 0.4f)), Tex("Rock"), Tex("Rock_n"), new Vector2(1, 1), 0.7f),
+                ["Solar_Frosted"] = Mat("Solar_Frosted", new Color(0.42f, 0.7f, 0.95f), 0.92f, metallic: 0.4f, emission: new Color(0.03f, 0.14f, 0.34f)),
+                ["Range_Paint"] = Mat("Range_Paint", new Color(0.95f, 0.72f, 0.12f), 0.25f),
+                ["Range_Board"] = Mat("Range_Board", new Color(0.55f, 0.4f, 0.24f), 0.15f),
+                ["Range_Lamp"] = Mat("Range_Lamp", new Color(1f, 0.55f, 0.1f), emission: new Color(1f, 0.5f, 0.08f) * 3f),
                 ["Range_Target"] = Mat("Range_Target", new Color(0.95f, 0.16f, 0.05f), emission: new Color(1f, 0.12f, 0.02f) * 0.45f),
                 ["Ship_Padding"] = Mat("Ship_Padding", new Color(0.09f, 0.095f, 0.11f), 0.25f),
                 ["Strip_Warm"] = Mat("Strip_Warm", new Color(1f, 0.6f, 0.25f), emission: new Color(1f, 0.55f, 0.2f) * 4f),

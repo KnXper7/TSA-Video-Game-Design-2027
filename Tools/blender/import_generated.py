@@ -1,7 +1,7 @@
 """
 Brings an AI-generated GLB model (for example from Higgsfield / Meshy) into the Unity project.
 
-  Blender --background --python Tools/blender/import_generated.py -- <file.glb> <Name> [height_in_metres]
+  Blender --background --python Tools/blender/import_generated.py -- <file.glb> <Name> [longest_side_in_metres] [--square]
 
 Writes Assets/_Project/Models/People/<Name>.fbx, its textures, and <Name>.json (which texture goes on which
 part), in the same layout as build_people.py, so the scene builder treats it like any other character.
@@ -16,7 +16,7 @@ TEXTURES = os.path.join(OUT, "Textures")
 
 args = sys.argv[sys.argv.index("--") + 1:]
 source, name = args[0], args[1]
-height = float(args[2]) if len(args) > 2 else None
+height = float(args[2]) if len(args) > 2 and not args[2].startswith('--') else None
 
 for ob in list(bpy.data.objects):
     bpy.data.objects.remove(ob, do_unlink=True)
@@ -29,8 +29,22 @@ def bounds():
     pts = [ob.matrix_world @ Vector(c) for ob in meshes for c in ob.bound_box]
     return Vector([min(p[i] for p in pts) for i in range(3)]), Vector([max(p[i] for p in pts) for i in range(3)])
 
-lo, hi = bounds()
 roots = [ob for ob in objects if ob.parent is None]
+if "--square" in args:
+    # Props generated from a three-quarter photo often come in turned a little. Turn the model about the vertical
+    # so its widest horizontal direction lies along X (a flat panel or target then faces straight down Y).
+    import math
+    pts = [ob.matrix_world @ v.co for ob in meshes for v in ob.data.vertices]
+    mx = sum(p.x for p in pts) / len(pts); my = sum(p.y for p in pts) / len(pts)
+    sxx = sum((p.x - mx) ** 2 for p in pts); syy = sum((p.y - my) ** 2 for p in pts); sxy = sum((p.x - mx) * (p.y - my) for p in pts)
+    angle = 0.5 * math.atan2(2 * sxy, sxx - syy)
+    from mathutils import Matrix
+    turn = Matrix.Rotation(-angle, 4, 'Z')
+    for ob in roots:
+        ob.matrix_world = turn @ ob.matrix_world
+    bpy.context.view_layer.update()
+    print(f"SQUARED by {math.degrees(-angle):.1f} degrees")
+lo, hi = bounds()
 if height:
     scale = height / max(hi - lo)      # the longest side becomes this long
     for ob in roots:

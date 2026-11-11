@@ -18,6 +18,9 @@ namespace TSAGame
 
         void Awake()
         {
+            // Lights get swapped and deleted while the room is being dressed: ignore any slot that is now empty.
+            alarmLights = System.Array.FindAll(alarmLights ?? new Light[0], l => l != null);
+            normalLights = System.Array.FindAll(normalLights ?? new Light[0], l => l != null);
             normalIntensities = new float[normalLights.Length];
             for (int i = 0; i < normalLights.Length; i++) normalIntensities[i] = normalLights[i].intensity;
             if (startOn) Trigger(); else Stop();

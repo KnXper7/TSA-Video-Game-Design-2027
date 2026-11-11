@@ -19,6 +19,8 @@ namespace TSAGame
         [Tooltip("Loose debris wedged against the hatch. It has to be knocked clear with the ball before you can get in.")]
         [SerializeField] BallSurface hatchBlocker;
         [SerializeField] float blockerClearDistance = 6.5f;
+        [Tooltip("The emergency release beside the hatch. The hatch stays locked until the ball hits it.")]
+        [SerializeField] BallSurface hatchRelease;
         [Tooltip("Drifting further than this from the hatch counts as lost.")]
         [SerializeField] float maxDistance = 260f;
 
@@ -108,22 +110,40 @@ namespace TSAGame
             oxygen.Depleted += () => failed = true;
             ball.Gripped += () => gripped = true;
             ball.Arrived += () => arrived = true;
-            bool bounced = false, saidFrost = false, saidBlocked = false, saidCleared = false;
+            bool bounced = false, saidFrost = false, saidBlocked = false, saidCleared = false, saidSealed = false, saidReleased = false;
             ball.Bounced += () => bounced = true;
 
             while (true)
             {
                 float distance = Vector3.Distance(player.transform.position, hatch.position);
-                hud.SetObjective($"Get back to the rocket's hatch  ({distance:0} m)\n{controls}");
+                bool blockedNow = hatchBlocker != null && Vector3.Distance(hatchBlocker.transform.position, hatch.position) < blockerClearDistance;
+                bool locked = hatchRelease != null && !hatchRelease.WasHit;
+                string goal = distance > 45f ? "Get back to the rocket's hatch"
+                    : blockedNow ? "Knock the debris clear of the hatch"
+                    : locked ? "Hit the yellow emergency release beside the hatch"
+                    : "Get to the hatch";
+                hud.SetObjective($"{goal}  ({distance:0} m)\n{controls}");
                 // Everything is heard from inside the helmet: as the air runs low, the breathing gets faster and louder.
                 float panic = 1f - Mathf.Clamp01(oxygen.Normalized * 1.6f);
                 AudioManager.SetLoop("ambience", Mathf.Lerp(0.5f, 0.95f, panic), Mathf.Lerp(1f, 1.7f, panic));
                 bool blocked = hatchBlocker != null && Vector3.Distance(hatchBlocker.transform.position, hatch.position) < blockerClearDistance;
-                if (distance < hatchReach && !blocked) break;
+                if (distance < hatchReach && !blocked && !locked) break;
+                if (distance < hatchReach + 2f && locked && !blocked && !saidSealed && !Dialogue.IsPlaying)
+                {
+                    saidSealed = true;
+                    StartCoroutine(Dialogue.Say(Speakers.ShipAI, "The hatch is sealed from the strike. The emergency release is the yellow box beside it. Hit it."));
+                }
+                if (!locked && hatchRelease != null && !saidReleased && !Dialogue.IsPlaying)
+                {
+                    saidReleased = true;
+                    AudioManager.Play(Sfx.PowerUp, 0.7f);
+                    state.AddXp(25, "Hatch released");
+                    StartCoroutine(Dialogue.Say(Speakers.ShipAI, "Release fired. The hatch is open. Come home."));
+                }
                 if (bounced && !saidFrost && !Dialogue.IsPlaying)
                 {
                     saidFrost = true;
-                    StartCoroutine(Dialogue.Say(Speakers.ShipAI, "That rock is glazed with frost. The ball cannot bite into it. It will only skip off."));
+                    StartCoroutine(Dialogue.Say(Speakers.ShipAI, "That is glazed with frost. The ball cannot bite into it. It will only skip off. Look for bare rock or torn hull."));
                 }
                 if (blocked && distance < 45f && !saidBlocked && !Dialogue.IsPlaying)
                 {
@@ -134,7 +154,7 @@ namespace TSAGame
                 {
                     saidCleared = true;
                     state.AddXp(25, "Hatch cleared");
-                    StartCoroutine(Dialogue.Say(Speakers.ShipAI, "Hatch is clear. Come home."));
+                    StartCoroutine(Dialogue.Say(Speakers.ShipAI, locked ? "Debris is clear. Now the emergency release. The yellow box beside the hatch." : "Hatch is clear. Come home."));
                 }
                 if (failed || distance > maxDistance)
                 {

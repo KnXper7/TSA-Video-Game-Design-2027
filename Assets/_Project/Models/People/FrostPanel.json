@@ -1,0 +1,15 @@
+{
+ "parts": [
+  {
+   "name": "Part1",
+   "kind": "skin",
+   "texture": "FrostPanel_1_color.png",
+   "normal": "",
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  }
+ ]
+}

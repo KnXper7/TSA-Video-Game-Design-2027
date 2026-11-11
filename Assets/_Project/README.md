@@ -43,7 +43,7 @@ Every puzzle is built from what the ball does when it hits something. Add a `Bal
 - **Loose** (needs a Rigidbody): the ball can't hold it, but the hit shoves it away. Clear a path.
 - **Target**: a switch. `WasHit` / `Hit` tell a sequence it was struck.
 
-Level 1 (practice range, east of the pad) teaches all three. Level 2 uses frost rocks on the route and loose debris wedged on the hatch.
+Level 1 (practice range, east of the pad) is five bays in the style of a test chamber, one idea each: straight throw, knock a loose crate, bank off frost, clear a loose board then bank, and a double bank off two plates. A lamp over each bay turns green when it is solved. Level 2 uses frost-glazed rocks and iced-over solar wings (no grip), torn hull plates as extra hand-holds, and a three-step finish on the ship itself: knock the loose plate off the hatch, hit the yellow emergency release to unseal it (the hatch lamp goes from red to green), then grip the hull and reel in.
 
 ## RPG systems
 
@@ -90,6 +90,9 @@ From the event guide (`HS - Video Game Design`): the game must be **playable in 
 - `Models/People/*` (other characters): MakeHuman / MPFB, CC0.
 - Fonts: Michroma and Rajdhani, SIL Open Font License.
 - `Resources/Sfx/*.wav`: music (`pad_tense`, `pad_calm`, `pad_mystery`, `pad_dark`, made with Higgsfield / ElevenLabs Music) and sound effects (`rocket_roar`, `explosion`, `clank`, `throw`, `whoosh`, `portal_open`, `wind`, `ricochet`, made with Higgsfield / Mirelo). A file here replaces the synthesized sound of the same name; delete it to go back.
+- `Models/People/RangeTarget.fbx`, `FrostPanel.fbx`, `Floodlight.fbx`: practice-range props made with Higgsfield (GPT Image reference in `Docs/Targets/range/`, then Meshy image-to-3D), converted by `Tools/blender/import_generated.py`.
+- `Models/People/HullPlate.fbx`, `HatchRelease.fbx`, `CargoCrate.fbx`: spacewalk wreckage, the hatch's emergency release and the cargo cases, made the same way (references in `Docs/Targets/spacewalk/` and `Docs/Targets/range/`).
+- `Third-Party-3D-Models/` (`sci-fi-servers`, `computer-desk`, `light-ceiling-lamp-15mb`): downloaded models placed by hand in `01_MissionControl`. **Source and licence still need recording here for the copyright checklist.**
 - `Docs/Targets/*`: realistic target images (Higgsfield GPT Image) and `glove_throw_seedance.mp4` (Higgsfield Seedance), used only as references for art and animation.
 - `Textures/PBR/*`: surface textures from ambientCG, CC0.
 - Voices: macOS text-to-speech placeholders (replace with team recordings).
@@ -166,3 +169,7 @@ Taken from how space films and trailers build their feeling:
 - **Handheld in small spaces.** The cabin and launch shots shake; the wide space shots stay still.
 - **A beat of silence before the title.** The launch roar cuts to black and nothing, then the title lands with the first sound.
 - **Cut to black before the answer.** The opening ends mid-sentence, on the question, not the explanation.
+
+## Hand-edited scenes
+
+`01_MissionControl` has been dressed by hand (servers, desks, ceiling lamps). **Do not rebuild it from the menu** (`Rebuild Scene…` / Build All would replace that work with the older generated room). Edit it in the editor instead.

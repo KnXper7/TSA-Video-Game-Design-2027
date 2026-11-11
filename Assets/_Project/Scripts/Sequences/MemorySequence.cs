@@ -223,32 +223,40 @@ namespace TSAGame
             var state = GameState.Instance;
             yield return Dialogue.Play(
                 (Speakers.Engineer, "You're not going up until I've seen you use it. The practice range is just east of the pad."),
-                (Speakers.Engineer, "Three targets. One you can hit straight. One is loose, so knock it off its post. The last one you can't see from the line."),
-                (Speakers.Engineer, "That pale plate is frost glaze. Nothing grips frost. The ball skips off it like a stone off water. Use that."));
+                (Speakers.Engineer, "Five bays, left to right. Each one teaches you one thing. The lamp over the bay goes green when you've got it."),
+                (Speakers.Engineer, "The blue plates are frost glaze. Nothing grips frost. The ball skips off it like a stone off water."));
             rangeMarker.SetActive(true);
             rangeBall.enabled = true;
             rangeBall.TakeOut();
-            bool saidBank = false;
-            int bounces = 0;
+            int bounces = 0, said = -1;
             rangeBall.Bounced += () => bounces++;
+            // One short line from the engineer as each bay comes up: the rule, never the answer.
+            string[] hints =
+            {
+                "Bay one. Straight throw. The ball goes exactly where you're looking.",
+                "Bay two. That crate isn't fixed down. The ball can't hold it, but it can knock it off.",
+                "Bay three. You can't see the target from the line. The frost plate can.",
+                "Bay four. Same trick, but something's standing in the way. It's loose.",
+                "Last one. Two plates. Think about where the ball goes after the first.",
+            };
             while (true)
             {
                 int hit = 0;
                 foreach (var target in rangeTargets) if (target.WasHit) hit++;
-                hud.SetObjective($"Practice range: hit all three targets ({hit}/3)\nLEFT MOUSE  throw   •   R  call the ball back\nFrost plates bounce the ball. Loose things get knocked away.");
+                hud.SetObjective($"Practice range: clear all five bays ({hit}/{rangeTargets.Length})\nLEFT MOUSE  throw   •   R  call the ball back\nFrost plates bounce the ball. Loose things get knocked away.");
                 if (hit >= rangeTargets.Length) break;
-                if (bounces > 0 && !saidBank && !Dialogue.IsPlaying)
+                if (hit > said && !Dialogue.IsPlaying)
                 {
-                    saidBank = true;
-                    StartCoroutine(Dialogue.Say(Speakers.Engineer, "There. See how it came off the frost? Same angle out as in. Move along the line until it lines up."));
+                    said = hit;
+                    StartCoroutine(Dialogue.Say(Speakers.Engineer, hints[Mathf.Min(hit, hints.Length - 1)]));
                 }
                 yield return null;
             }
             rangeMarker.SetActive(false);
             rangeBall.PutAway();
             rangeBall.enabled = false;
-            state.AddXp(40, "Range cleared");
-            if (bounces <= 2) state.AddXp(15, "Clean bank shot");
+            state.AddXp(60, "Range cleared");
+            if (rangeBall.Throws <= 12) state.AddXp(20, "Steady hand");
             yield return Dialogue.Play(
                 (Speakers.Engineer, "Grip, knock, bank. That's all it does, and it's all you'll need."),
                 (Speakers.Commander, "Let's hope so."));

@@ -117,7 +117,9 @@ namespace TSAGame
 
         IEnumerator PlayShot(CutsceneShot shot)
         {
-            shot.onStart?.Invoke();
+            // One broken hook-up (a deleted light, a renamed object) must never freeze the whole cutscene.
+            try { shot.onStart?.Invoke(); }
+            catch (System.Exception e) { Debug.LogException(e, this); }
             cutsceneCamera.fieldOfView = shot.fieldOfView;
 
             bool linesDone = shot.lines.Count == 0;
